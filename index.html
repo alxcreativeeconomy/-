@@ -32,7 +32,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
   <script src="firebase-config.js"></script>
-  <script src="stripe-config.js"></script>
 
   <!-- Premium Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1240,13 +1239,9 @@
       firebaseFunctions = firebase.app().functions("us-central1");
     }
 
-    const stripeReady = window.STRIPE_CONFIG
-      && window.STRIPE_CONFIG.publishableKey
-      && window.STRIPE_CONFIG.publishableKey !== "pk_test_YOUR_PUBLISHABLE_KEY";
-
     const PRODUCTION_AUTH_ORIGIN = "https://playmzansi.online";
 
-    const paymentsReady = firebaseReady && stripeReady && !!firebaseFunctions;
+    const paymentsReady = firebaseReady && !!firebaseFunctions;
 
     const getCheckoutOrigin = () => {
       const host = window.location.hostname;
@@ -1260,11 +1255,26 @@
         "functions/unauthenticated": "Please log in before purchasing token packs.",
         "functions/permission-denied": "You do not have permission to start checkout.",
         "functions/invalid-argument": "That coin pack is not available.",
-        "functions/failed-precondition": error?.message || "Stripe is not configured on the server yet.",
+        "functions/failed-precondition": error?.message || "PayFast is not configured on the server yet.",
         "functions/unavailable": "Payments are temporarily unavailable. Try again shortly.",
         "functions/internal": "Payment service error. Try again in a moment.",
       };
       return messages[code] || error?.message || "Could not start checkout. Try again.";
+    };
+
+    const submitPayFastCheckout = (action, fields) => {
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = action;
+      Object.entries(fields).forEach(([name, value]) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+      });
+      document.body.appendChild(form);
+      form.submit();
     };
 
     const getAuthContinueUrl = (authFlag) => {
@@ -1863,11 +1873,6 @@
           return;
         }
 
-        if (!stripeReady) {
-          showToast("Stripe publishable key is missing. Add STRIPE_PUBLISHABLE_KEY to GitHub Secrets.", "info");
-          return;
-        }
-
         if (!firebaseFunctions) {
           showToast("Payment functions are not available. Deploy Firebase Functions first.", "info");
           return;
@@ -1882,17 +1887,17 @@
 
         setPurchasingPackId(pack.id);
         try {
-          const createCheckoutSession = firebaseFunctions.httpsCallable("createCheckoutSession");
-          const result = await createCheckoutSession({
+          const createPayFastPayment = firebaseFunctions.httpsCallable("createPayFastPayment");
+          const result = await createPayFastPayment({
             packId: pack.id,
             origin: getCheckoutOrigin(),
           });
 
-          if (!result?.data?.url) {
-            throw new Error("Stripe checkout URL was not returned.");
+          if (!result?.data?.action || !result?.data?.fields) {
+            throw new Error("PayFast checkout details were not returned.");
           }
 
-          window.location.href = result.data.url;
+          submitPayFastCheckout(result.data.action, result.data.fields);
         } catch (error) {
           showToast(mapPurchaseError(error), "info");
         } finally {
@@ -2805,11 +2810,11 @@
                 <p className="text-xs text-gray-400 mt-2">Choose validation coins to verify your prediction entries on kickoff.</p>
                 {paymentsReady ? (
                   <p className="text-[10px] text-emerald-300/90 mt-3 font-bold uppercase tracking-widest">
-                    Secure card payments · Stripe Checkout · ZAR
+                    Secure payments · PayFast · Cards &amp; EFT · ZAR
                   </p>
                 ) : (
                   <p className="text-[10px] text-amber-300/80 mt-3 font-bold uppercase tracking-widest">
-                    Stripe checkout activating — packs visible for preview
+                    PayFast checkout activating — packs visible for preview
                   </p>
                 )}
                 {currentUser && (
@@ -2871,7 +2876,7 @@
                         }`}
                       >
                         {purchasingPackId === pk.id
-                          ? "Opening Stripe..."
+                          ? "Opening PayFast..."
                           : paymentsReady
                             ? `Buy ${pk.value} Pack`
                             : "Coming Soon"}

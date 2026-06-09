@@ -1,16 +1,21 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const Stripe = require("stripe");
+const {
+  buildPaymentFields,
+  confirmItnWithPayfast,
+  getProcessUrl,
+  validateItnSignature,
+} = require("./payfast");
 
 admin.initializeApp();
 
 const db = admin.firestore();
 
 const PACKS = {
-  bronze: { name: "Bronze Coin Pack", tokens: 5, amount: 500, currency: "zar" },
-  silver: { name: "Silver Coin Pack", tokens: 25, amount: 2500, currency: "zar" },
-  gold: { name: "Gold Coin Pack", tokens: 60, amount: 6000, currency: "zar" },
-  platinum: { name: "Platinum Coin Pack", tokens: 150, amount: 15000, currency: "zar" },
+  bronze: { name: "Bronze Coin Pack", tokens: 5, amount: "5.00" },
+  silver: { name: "Silver Coin Pack", tokens: 25, amount: "25.00" },
+  gold: { name: "Gold Coin Pack", tokens: 60, amount: "60.00" },
+  platinum: { name: "Platinum Coin Pack", tokens: 150, amount: "150.00" },
 };
 
 const DEFAULT_ORIGIN = "https://playmzansi.online";
@@ -33,22 +38,72 @@ function resolveCheckoutOrigin(origin) {
   return DEFAULT_ORIGIN;
 }
 
-function getStripe() {
-  const secretKey = process.env.STRIPE_SECRET_KEY || functions.config().stripe?.secret_key;
-  if (!secretKey) {
+function getPayfastConfig() {
+  const config = functions.config().payfast || {};
+  const merchantId = process.env.PAYFAST_MERCHANT_ID || config.merchant_id;
+  const merchantKey = process.env.PAYFAST_MERCHANT_KEY || config.merchant_key;
+  const passphrase = process.env.PAYFAST_PASSPHRASE || config.passphrase || "";
+  const sandbox = (process.env.PAYFAST_SANDBOX || config.sandbox || "true") === "true";
+
+  if (!merchantId || !merchantKey) {
     throw new functions.https.HttpsError(
       "failed-precondition",
-      "Stripe secret key is not configured on the server."
+      "PayFast merchant credentials are not configured on the server."
     );
   }
-  return new Stripe(secretKey);
+
+  return { merchantId, merchantKey, passphrase, sandbox };
 }
 
-function getWebhookSecret() {
-  return process.env.STRIPE_WEBHOOK_SECRET || functions.config().stripe?.webhook_secret;
+function getNotifyUrl(sandbox) {
+  const configured = process.env.PAYFAST_NOTIFY_URL || functions.config().payfast?.notify_url;
+  if (configured) return configured;
+  const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || "goalking-2026";
+  const region = "us-central1";
+  return `https://${region}-${projectId}.cloudfunctions.net/payfastItn`;
 }
 
-exports.createCheckoutSession = functions.https.onCall(async (data, context) => {
+async function creditTokens({
+  paymentId,
+  uid,
+  packId,
+  tokens,
+  amount,
+  provider,
+  raw,
+}) {
+  const paymentRef = db.collection("payments").doc(paymentId);
+  const existingPayment = await paymentRef.get();
+  if (existingPayment.exists) {
+    return false;
+  }
+
+  const userRef = db.collection("users").doc(uid);
+  await db.runTransaction(async (transaction) => {
+    const userSnap = await transaction.get(userRef);
+    const currentTokens = userSnap.exists ? (userSnap.data().tokens || 0) : 0;
+    transaction.set(
+      userRef,
+      { tokens: currentTokens + tokens },
+      { merge: true }
+    );
+    transaction.set(paymentRef, {
+      uid,
+      packId: packId || null,
+      tokens,
+      amount,
+      currency: "zar",
+      provider,
+      status: "completed",
+      raw: raw || null,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+  });
+
+  return true;
+}
+
+exports.createPayFastPayment = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "You must be logged in to purchase tokens.");
   }
@@ -59,98 +114,101 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
     throw new functions.https.HttpsError("invalid-argument", "Unknown token pack.");
   }
 
+  const { merchantId, merchantKey, passphrase, sandbox } = getPayfastConfig();
   const origin = resolveCheckoutOrigin(data?.origin);
+  const paymentId = `${context.auth.uid}_${packId}_${Date.now()}`;
+  const notifyUrl = getNotifyUrl(sandbox);
 
-  const stripe = getStripe();
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    payment_method_types: ["card"],
-    line_items: [
-      {
-        price_data: {
-          currency: pack.currency,
-          unit_amount: pack.amount,
-          product_data: {
-            name: pack.name,
-            description: `${pack.tokens} GoalKing validation tokens`,
-          },
-        },
-        quantity: 1,
-      },
-    ],
-    metadata: {
-      uid: context.auth.uid,
-      packId,
-      tokens: String(pack.tokens),
-    },
-    success_url: `${origin}/?payment=success&pack=${packId}&session_id={CHECKOUT_SESSION_ID}#tokens`,
-    cancel_url: `${origin}/?payment=cancelled#tokens`,
-    customer_email: context.auth.token.email || undefined,
+  const fields = buildPaymentFields({
+    merchantId,
+    merchantKey,
+    passphrase,
+    pack,
+    packId,
+    uid: context.auth.uid,
+    email: context.auth.token.email || undefined,
+    origin,
+    notifyUrl,
+    paymentId,
   });
 
-  return { url: session.url };
+  return {
+    action: getProcessUrl(sandbox),
+    fields,
+    provider: "payfast",
+  };
 });
 
-exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
+exports.payfastItn = functions.https.onRequest(async (req, res) => {
   if (req.method !== "POST") {
     return res.status(405).send("Method Not Allowed");
   }
 
-  const webhookSecret = getWebhookSecret();
-  if (!webhookSecret) {
-    console.error("Stripe webhook secret is not configured.");
-    return res.status(500).send("Webhook secret not configured.");
-  }
-
-  const stripe = getStripe();
-  const signature = req.headers["stripe-signature"];
-
-  let event;
+  let config;
   try {
-    event = stripe.webhooks.constructEvent(req.rawBody, signature, webhookSecret);
+    config = getPayfastConfig();
   } catch (error) {
-    console.error("Stripe webhook signature verification failed:", error.message);
-    return res.status(400).send(`Webhook Error: ${error.message}`);
+    console.error("PayFast config missing:", error.message);
+    return res.status(500).send("PayFast not configured");
   }
 
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object;
-    const uid = session.metadata?.uid;
-    const packId = session.metadata?.packId;
-    const tokens = Number.parseInt(session.metadata?.tokens || "0", 10);
+  const payload = { ...req.body };
+  if (!validateItnSignature(payload, config.passphrase)) {
+    console.error("PayFast ITN signature invalid", payload.m_payment_id);
+    return res.status(400).send("Invalid signature");
+  }
 
-    if (!uid || !tokens) {
-      console.error("Missing checkout metadata", session.id);
-      return res.json({ received: true });
-    }
+  let confirmed = false;
+  try {
+    confirmed = await confirmItnWithPayfast(payload, config.sandbox);
+  } catch (error) {
+    console.error("PayFast ITN validation request failed:", error.message);
+    return res.status(500).send("Validation failed");
+  }
 
-    const paymentRef = db.collection("payments").doc(session.id);
-    const existingPayment = await paymentRef.get();
-    if (existingPayment.exists) {
-      return res.json({ received: true });
-    }
+  if (!confirmed) {
+    console.error("PayFast ITN not confirmed by PayFast", payload.m_payment_id);
+    return res.status(400).send("Not confirmed");
+  }
 
-    const userRef = db.collection("users").doc(uid);
-    await db.runTransaction(async (transaction) => {
-      const userSnap = await transaction.get(userRef);
-      const currentTokens = userSnap.exists ? (userSnap.data().tokens || 0) : 0;
-      transaction.set(
-        userRef,
-        { tokens: currentTokens + tokens },
-        { merge: true }
-      );
-      transaction.set(paymentRef, {
-        uid,
-        packId: packId || null,
-        tokens,
-        amount: session.amount_total,
-        currency: session.currency,
-        stripeSessionId: session.id,
-        status: "completed",
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
+  if (payload.payment_status !== "COMPLETE") {
+    return res.status(200).send("OK");
+  }
+
+  const uid = payload.custom_str1;
+  const packId = payload.custom_str2;
+  const tokens = Number.parseInt(payload.custom_str3 || "0", 10);
+  const pack = PACKS[packId];
+  const paymentId = payload.pf_payment_id || payload.m_payment_id;
+
+  if (!uid || !tokens || !paymentId) {
+    console.error("PayFast ITN missing metadata", paymentId);
+    return res.status(200).send("OK");
+  }
+
+  if (pack && payload.amount_gross && Number.parseFloat(payload.amount_gross) < Number.parseFloat(pack.amount)) {
+    console.error("PayFast ITN amount mismatch", paymentId, payload.amount_gross, pack.amount);
+    return res.status(400).send("Amount mismatch");
+  }
+
+  try {
+    await creditTokens({
+      paymentId: `payfast_${paymentId}`,
+      uid,
+      packId,
+      tokens,
+      amount: payload.amount_gross || pack?.amount || null,
+      provider: "payfast",
+      raw: {
+        m_payment_id: payload.m_payment_id,
+        pf_payment_id: payload.pf_payment_id,
+        payment_status: payload.payment_status,
+      },
     });
+  } catch (error) {
+    console.error("Failed to credit tokens from PayFast ITN:", error);
+    return res.status(500).send("Credit failed");
   }
 
-  return res.json({ received: true });
+  return res.status(200).send("OK");
 });

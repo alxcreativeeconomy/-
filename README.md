@@ -100,29 +100,29 @@ Public contact on the site: **support@playmzansi.online**
 
 Optional extra addresses: `hello@`, `help@` → same inbox.
 
-## Stripe token packs
+## PayFast token packs (South Africa)
 
-Coin packs use **Stripe Checkout** (ZAR) via Firebase Cloud Functions. Tokens are credited to the user profile after Stripe confirms payment.
+Coin packs use **PayFast** (ZAR) via Firebase Cloud Functions. PayFast supports South African cards, debit cards, EFT, and other local methods. Tokens are credited after PayFast sends a confirmed **ITN** (Instant Transaction Notification).
 
-### 1) Stripe account
+### 1) PayFast account
 
-1. Create an account at [stripe.com](https://dashboard.stripe.com/register)
-2. Stay in **Test mode** until you are ready to go live
-3. Copy keys from **Developers → API keys**:
-   - **Publishable key** → frontend
-   - **Secret key** → Firebase Functions only
+1. Register at [payfast.io](https://www.payfast.co.za/) with your South African business or sole prop details
+2. Complete merchant verification in the PayFast dashboard
+3. For testing first, use **Sandbox**: [sandbox.payfast.co.za](https://sandbox.payfast.co.za/)
+4. Copy from **Settings → Developer settings**:
+   - **Merchant ID**
+   - **Merchant Key**
+   - **Security passphrase** (set one if empty)
 
-### 2) GitHub Secret (frontend)
+**Sandbox test credentials** (PayFast public sandbox):
 
-Repo → **Settings → Secrets and variables → Actions** → add:
+| Field | Value |
+|-------|-------|
+| Merchant ID | `10000100` |
+| Merchant Key | `46f0cd694581a` |
+| Passphrase | *(leave empty for sandbox unless you set one)* |
 
-| Secret | Example |
-|--------|---------|
-| `STRIPE_PUBLISHABLE_KEY` | `pk_test_...` |
-
-The deploy workflow injects this into `public/stripe-config.js` at build time.
-
-### 3) Firebase Blaze + Functions
+### 2) Firebase Blaze + Functions
 
 Cloud Functions require the **Blaze** plan (pay-as-you-go).
 
@@ -132,27 +132,42 @@ npm install
 cd ..
 firebase login
 firebase use goalking-2026
-firebase functions:config:set stripe.secret_key="sk_test_..." stripe.webhook_secret="whsec_..."
+firebase functions:config:set \
+  payfast.merchant_id="10000100" \
+  payfast.merchant_key="46f0cd694581a" \
+  payfast.passphrase="" \
+  payfast.sandbox="true"
 firebase deploy --only functions,firestore:rules
 ```
 
-### 4) Stripe webhook
+For **live** payments, replace with your real PayFast credentials and set `payfast.sandbox="false"`.
 
-Stripe Dashboard → **Developers → Webhooks → Add endpoint**
+### 3) PayFast ITN (notify URL)
 
-- **URL:** `https://us-central1-goalking-2026.cloudfunctions.net/stripeWebhook`
-- **Event:** `checkout.session.completed`
-- Copy the **Signing secret** (`whsec_...`) into Firebase config (step 3)
+PayFast Dashboard → **Settings → Developer settings → Instant Transaction Notification (ITN)**
 
-### 5) Local testing
+Set the notify URL to:
 
-```bash
-cp public/stripe-config.example.js public/stripe-config.js
-# Edit stripe-config.js with your pk_test_ key
-npm run dev
+```
+https://us-central1-goalking-2026.cloudfunctions.net/payfastItn
 ```
 
-Use Stripe test card `4242 4242 4242 4242`, any future expiry, any CVC.
+Enable ITN. PayFast POSTs here when a payment completes; the function verifies the signature, confirms with PayFast, then credits tokens.
+
+Also set in PayFast:
+
+- **Return URL:** `https://playmzansi.online/?payment=success#tokens`
+- **Cancel URL:** `https://playmzansi.online/?payment=cancelled#tokens`
+
+(The app also sends per-checkout return/cancel URLs — these are fallbacks.)
+
+### 4) Test a purchase
+
+1. Deploy functions with sandbox credentials
+2. Open **https://playmzansi.online** → log in → verify email
+3. **Stake** section → **Buy R5 Pack**
+4. Complete payment on PayFast sandbox (use sandbox test details from PayFast docs)
+5. You return to the site; tokens appear after ITN runs
 
 ### Pack pricing (ZAR)
 
@@ -163,4 +178,6 @@ Use Stripe test card `4242 4242 4242 4242`, any future expiry, any CVC.
 | Gold | R60 | 60 |
 | Platinum | R150 | 150 |
 
-After payment, users return to `/?payment=success&pack=gold` and tokens appear once the webhook runs.
+### Why PayFast instead of Stripe?
+
+Stripe has limited support for many South African sole traders and small businesses. PayFast is built for ZAR and local payment methods, with lower onboarding friction for Mzansi merchants.
