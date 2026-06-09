@@ -13,6 +13,26 @@ const PACKS = {
   platinum: { name: "Platinum Coin Pack", tokens: 150, amount: 15000, currency: "zar" },
 };
 
+const DEFAULT_ORIGIN = "https://playmzansi.online";
+const ALLOWED_ORIGINS = new Set([
+  DEFAULT_ORIGIN,
+  "https://www.playmzansi.online",
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
+]);
+
+function resolveCheckoutOrigin(origin) {
+  if (typeof origin === "string") {
+    const normalized = origin.replace(/\/$/, "");
+    if (ALLOWED_ORIGINS.has(normalized)) {
+      return normalized;
+    }
+  }
+  return DEFAULT_ORIGIN;
+}
+
 function getStripe() {
   const secretKey = process.env.STRIPE_SECRET_KEY || functions.config().stripe?.secret_key;
   if (!secretKey) {
@@ -39,9 +59,7 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
     throw new functions.https.HttpsError("invalid-argument", "Unknown token pack.");
   }
 
-  const origin = typeof data?.origin === "string" && data.origin.startsWith("http")
-    ? data.origin.replace(/\/$/, "")
-    : "http://localhost:5174";
+  const origin = resolveCheckoutOrigin(data?.origin);
 
   const stripe = getStripe();
   const session = await stripe.checkout.sessions.create({

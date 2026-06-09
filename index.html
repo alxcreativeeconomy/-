@@ -1246,6 +1246,27 @@
 
     const PRODUCTION_AUTH_ORIGIN = "https://playmzansi.online";
 
+    const paymentsReady = firebaseReady && stripeReady && !!firebaseFunctions;
+
+    const getCheckoutOrigin = () => {
+      const host = window.location.hostname;
+      const isLocal = host === "localhost" || host === "127.0.0.1";
+      return isLocal ? window.location.origin.replace(/\/$/, "") : PRODUCTION_AUTH_ORIGIN;
+    };
+
+    const mapPurchaseError = (error) => {
+      const code = error?.code || "";
+      const messages = {
+        "functions/unauthenticated": "Please log in before purchasing token packs.",
+        "functions/permission-denied": "You do not have permission to start checkout.",
+        "functions/invalid-argument": "That coin pack is not available.",
+        "functions/failed-precondition": error?.message || "Stripe is not configured on the server yet.",
+        "functions/unavailable": "Payments are temporarily unavailable. Try again shortly.",
+        "functions/internal": "Payment service error. Try again in a moment.",
+      };
+      return messages[code] || error?.message || "Could not start checkout. Try again.";
+    };
+
     const getAuthContinueUrl = (authFlag) => {
       const host = window.location.hostname;
       const isLocal = host === "localhost" || host === "127.0.0.1";
@@ -1832,12 +1853,23 @@
       const handlePurchasePack = async (pack) => {
         if (!currentUser) {
           showToast("Please log in to purchase coin packages.", "info");
+          setAuthMode("login");
           setIsAuthModalOpen(true);
           return;
         }
 
+        if (!firebaseReady) {
+          showToast("Firebase is not configured yet.", "info");
+          return;
+        }
+
+        if (!stripeReady) {
+          showToast("Stripe publishable key is missing. Add STRIPE_PUBLISHABLE_KEY to GitHub Secrets.", "info");
+          return;
+        }
+
         if (!firebaseFunctions) {
-          showToast("Payments are not configured yet. Deploy Firebase Functions first.", "info");
+          showToast("Payment functions are not available. Deploy Firebase Functions first.", "info");
           return;
         }
 
@@ -1853,7 +1885,7 @@
           const createCheckoutSession = firebaseFunctions.httpsCallable("createCheckoutSession");
           const result = await createCheckoutSession({
             packId: pack.id,
-            origin: window.location.origin,
+            origin: getCheckoutOrigin(),
           });
 
           if (!result?.data?.url) {
@@ -1862,8 +1894,7 @@
 
           window.location.href = result.data.url;
         } catch (error) {
-          const message = error?.message || "Could not start checkout. Try again.";
-          showToast(message, "info");
+          showToast(mapPurchaseError(error), "info");
         } finally {
           setPurchasingPackId(null);
         }
@@ -2772,8 +2803,17 @@
                 <span className="text-xs font-bold text-amber-400 tracking-widest uppercase">COIN EXCHANGE</span>
                 <h2 className="font-bebas text-5xl font-black text-white mt-1">VALIDATION COINS</h2>
                 <p className="text-xs text-gray-400 mt-2">Choose validation coins to verify your prediction entries on kickoff.</p>
+                {paymentsReady ? (
+                  <p className="text-[10px] text-emerald-300/90 mt-3 font-bold uppercase tracking-widest">
+                    Secure card payments · Stripe Checkout · ZAR
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-amber-300/80 mt-3 font-bold uppercase tracking-widest">
+                    Stripe checkout activating — packs visible for preview
+                  </p>
+                )}
                 {currentUser && (
-                  <p className="text-[11px] text-amber-400/90 mt-3 font-bold uppercase tracking-widest">
+                  <p className="text-[11px] text-amber-400/90 mt-2 font-bold uppercase tracking-widest">
                     Your balance: {currentUser.tokens ?? 0} tokens
                   </p>
                 )}
@@ -2825,12 +2865,16 @@
                       
                       <button 
                         onClick={() => handlePurchasePack(pk)}
-                        disabled={purchasingPackId === pk.id}
+                        disabled={purchasingPackId === pk.id || !paymentsReady}
                         className={`w-full py-3.5 rounded text-xs uppercase tracking-widest font-black transition-all cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed ${
                           pk.featured ? 'bg-amber-400 text-gray-950 hover:bg-amber-300' : 'bg-[#050c18] text-white border border-white/15 hover:border-white'
                         }`}
                       >
-                        {purchasingPackId === pk.id ? "Opening Stripe..." : "Acquire Pack"}
+                        {purchasingPackId === pk.id
+                          ? "Opening Stripe..."
+                          : paymentsReady
+                            ? `Buy ${pk.value} Pack`
+                            : "Coming Soon"}
                       </button>
                     </div>
 

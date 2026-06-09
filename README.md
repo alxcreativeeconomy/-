@@ -99,3 +99,68 @@ Keep your **5 web records** as they are. Email uses **separate MX/TXT records** 
 Public contact on the site: **support@playmzansi.online**
 
 Optional extra addresses: `hello@`, `help@` → same inbox.
+
+## Stripe token packs
+
+Coin packs use **Stripe Checkout** (ZAR) via Firebase Cloud Functions. Tokens are credited to the user profile after Stripe confirms payment.
+
+### 1) Stripe account
+
+1. Create an account at [stripe.com](https://dashboard.stripe.com/register)
+2. Stay in **Test mode** until you are ready to go live
+3. Copy keys from **Developers → API keys**:
+   - **Publishable key** → frontend
+   - **Secret key** → Firebase Functions only
+
+### 2) GitHub Secret (frontend)
+
+Repo → **Settings → Secrets and variables → Actions** → add:
+
+| Secret | Example |
+|--------|---------|
+| `STRIPE_PUBLISHABLE_KEY` | `pk_test_...` |
+
+The deploy workflow injects this into `public/stripe-config.js` at build time.
+
+### 3) Firebase Blaze + Functions
+
+Cloud Functions require the **Blaze** plan (pay-as-you-go).
+
+```bash
+cd functions
+npm install
+cd ..
+firebase login
+firebase use goalking-2026
+firebase functions:config:set stripe.secret_key="sk_test_..." stripe.webhook_secret="whsec_..."
+firebase deploy --only functions,firestore:rules
+```
+
+### 4) Stripe webhook
+
+Stripe Dashboard → **Developers → Webhooks → Add endpoint**
+
+- **URL:** `https://us-central1-goalking-2026.cloudfunctions.net/stripeWebhook`
+- **Event:** `checkout.session.completed`
+- Copy the **Signing secret** (`whsec_...`) into Firebase config (step 3)
+
+### 5) Local testing
+
+```bash
+cp public/stripe-config.example.js public/stripe-config.js
+# Edit stripe-config.js with your pk_test_ key
+npm run dev
+```
+
+Use Stripe test card `4242 4242 4242 4242`, any future expiry, any CVC.
+
+### Pack pricing (ZAR)
+
+| Pack | Price | Tokens |
+|------|-------|--------|
+| Bronze | R5 | 5 |
+| Silver | R25 | 25 |
+| Gold | R60 | 60 |
+| Platinum | R150 | 150 |
+
+After payment, users return to `/?payment=success&pack=gold` and tokens appear once the webhook runs.
