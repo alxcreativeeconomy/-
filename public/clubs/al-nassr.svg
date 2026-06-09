@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Al-Nassr FC">
+  <circle cx="60" cy="60" r="58" fill="#f4c300" stroke="#0e2b5c" stroke-width="4"/>
+  <circle cx="60" cy="60" r="44" fill="none" stroke="#0e2b5c" stroke-width="3"/>
+  <path fill="#0e2b5c" d="M60 24c-12 10-20 18-20 30 0 11 9 20 20 20s20-9 20-20c0-12-8-20-20-30z"/>
+  <circle cx="60" cy="54" r="10" fill="#f4c300" stroke="#0e2b5c" stroke-width="2"/>
+  <path fill="#0e2b5c" d="M44 78h32l-4 10H48l-4-10zm6 14h20l2 6H48l2-6z"/>
+  <text x="60" y="104" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#0e2b5c">AL-NASSR</text>
+</svg>

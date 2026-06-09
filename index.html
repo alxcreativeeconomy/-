@@ -427,54 +427,66 @@
     const { useState, useEffect, useCallback, useRef } = React;
 
     // ─── DATA & STATIONS ──────────────────────────────────────
+    const assetPath = (path) => `${window.__ASSET_BASE__ || "/"}${path.replace(/^\//, "")}`;
+
+    const CLUB_LOGOS = {
+      realMadrid: assetPath("clubs/real-madrid.svg"),
+      manCity: assetPath("clubs/manchester-city.svg"),
+      interMiami: assetPath("clubs/inter-miami.svg"),
+      liverpool: assetPath("clubs/liverpool.svg"),
+      alNassr: assetPath("clubs/al-nassr.svg"),
+      barcelona: assetPath("clubs/barcelona.svg"),
+      bayern: assetPath("clubs/bayern.svg"),
+    };
+
     const PLAYERS = [
       { 
         id: 1, name: "Kylian Mbappé", short: "MBAPPÉ", pos: "ST", nat: "FRANCE", rating: 97, pac: 99, sho: 95, pas: 86, dri: 97, def: 43, phy: 85, tier: "TOTY", cat: "striker",
         imageUrl: "https://cdn.futbin.com/content/fifa24/img/players/231747.png",
         flagUrl: "https://flagcdn.com/w40/fr.png",
-        clubUrl: "https://upload.wikimedia.org/wikipedia/en/5/56/Real_Madrid_CF.svg"
+        clubUrl: CLUB_LOGOS.realMadrid
       },
       { 
         id: 2, name: "Erling Haaland", short: "HAALAND", pos: "ST", nat: "NORWAY", rating: 97, pac: 89, sho: 98, pas: 65, dri: 80, def: 45, phy: 88, tier: "TOTY", cat: "striker",
         imageUrl: "https://cdn.futbin.com/content/fifa24/img/players/239085.png",
         flagUrl: "https://flagcdn.com/w40/no.png",
-        clubUrl: "https://upload.wikimedia.org/wikipedia/en/e/eb/Manchester_City_FC_badge.svg"
+        clubUrl: CLUB_LOGOS.manCity
       },
       { 
         id: 3, name: "Vinícius Jr.", short: "VINÍCIUS JR.", pos: "LW", nat: "BRAZIL", rating: 97, pac: 99, sho: 91, pas: 90, dri: 98, def: 38, phy: 78, tier: "TOTY", cat: "winger",
         imageUrl: "https://cdn.futbin.com/content/fifa24/img/players/238794.png",
         flagUrl: "https://flagcdn.com/w40/br.png",
-        clubUrl: "https://upload.wikimedia.org/wikipedia/en/5/56/Real_Madrid_CF.svg"
+        clubUrl: CLUB_LOGOS.realMadrid
       },
       { 
         id: 4, name: "Lionel Messi", short: "MESSI", pos: "RW", nat: "ARGENTINA", rating: 91, pac: 75, sho: 87, pas: 92, dri: 95, def: 38, phy: 65, tier: "ICN", cat: "winger",
         imageUrl: "https://cdn.futbin.com/content/fifa24/img/players/158023.png",
         flagUrl: "https://flagcdn.com/w40/ar.png",
-        clubUrl: "https://upload.wikimedia.org/wikipedia/en/0/0c/Inter_Miami_CF_logo.svg"
+        clubUrl: CLUB_LOGOS.interMiami
       },
       { 
         id: 5, name: "Mohamed Salah", short: "SALAH", pos: "RW", nat: "EGYPT", rating: 91, pac: 96, sho: 94, pas: 91, dri: 96, def: 57, phy: 84, tier: "TOTY", cat: "winger",
         imageUrl: "https://cdn.futbin.com/content/fifa24/img/players/209331.png",
         flagUrl: "https://flagcdn.com/w40/eg.png",
-        clubUrl: "https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg"
+        clubUrl: CLUB_LOGOS.liverpool
       },
       { 
         id: 7, name: "Cristiano Ronaldo", short: "RONALDO", pos: "ST", nat: "PORTUGAL", rating: 92, pac: 85, sho: 93, pas: 81, dri: 84, def: 39, phy: 78, tier: "ICN", cat: "striker",
         imageUrl: "https://cdn.futbin.com/content/fifa24/img/players/20801.png",
         flagUrl: "https://flagcdn.com/w40/pt.png",
-        clubUrl: "https://upload.wikimedia.org/wikipedia/en/3/3c/Al-Nassr_FC.svg"
+        clubUrl: CLUB_LOGOS.alNassr
       },
       { 
         id: 8, name: "Lamine Yamal", short: "YAMAL", pos: "RW", nat: "SPAIN", rating: 94, pac: 93, sho: 87, pas: 89, dri: 94, def: 34, phy: 68, tier: "TOTY", cat: "winger",
         imageUrl: "https://cdn.futbin.com/content/fifa25/img/players/277643.png",
         flagUrl: "https://flagcdn.com/w40/es.png",
-        clubUrl: "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg"
+        clubUrl: CLUB_LOGOS.barcelona
       },
       { 
         id: 10, name: "Harry Kane", short: "KANE", pos: "ST", nat: "ENGLAND", rating: 91, pac: 72, sho: 94, pas: 84, dri: 83, def: 49, phy: 83, tier: "GOLD", cat: "striker",
         imageUrl: "https://cdn.futbin.com/content/fifa24/img/players/202126.png",
         flagUrl: "https://flagcdn.com/w40/gb-eng.png",
-        clubUrl: "https://upload.wikimedia.org/wikipedia/commons/1/1b/FC_Bayern_M%C3%BCnchen_logo_%282017%29.svg"
+        clubUrl: CLUB_LOGOS.bayern
       }
     ];
 
@@ -490,8 +502,6 @@
       { id: "gold", name: "Gold", tokens: 60, value: "R60", color: "#FBBF24", description: "Most popular choice. Complete prediction premium logs.", featured: true },
       { id: "platinum", name: "Platinum", tokens: 150, value: "R150", color: "#e5e4e2", description: "Ultimate access ticket to the VIP finals sweepstakes.", featured: false }
     ];
-
-    const assetPath = (path) => `${window.__ASSET_BASE__ || "/"}${path.replace(/^\//, "")}`;
 
     const SPONSORS = [
       { id: "adidas", name: "Adidas", logo: assetPath("sponsors/adidas.svg") },
