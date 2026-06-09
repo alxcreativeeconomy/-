@@ -912,6 +912,11 @@
       7: "wink", 8: "wave", 10: "thumbs", 11: "thumbs", 12: "wink",
     };
 
+    const LEGAL_LINKS = {
+      terms: "https://www.termsfeed.com/live/6b0ab06a-2266-440b-8126-626df1996291",
+      refund: "https://www.termsfeed.com/live/599f0fe6-572f-4186-a404-9b74d653d52f",
+    };
+
     const STADIUM_SOUNDS = {
       chantLoop: assetPath("sounds/stadium-ambience.mp3"),
       crowdChant: assetPath("sounds/crowd-build.mp3"),
@@ -2843,9 +2848,8 @@
               <span>© 2026 GOALKING BRACKETS DRAFT. NOT DIRECTLY AFFILIATED WITH FIFA OR REAL FEDERATIONS.</span>
               <div className="flex flex-wrap gap-6 justify-center md:justify-end">
                 <a href="mailto:support@playmzansi.online" className="hover:text-amber-400">SUPPORT</a>
-                <a href="#featured-players" className="hover:text-white">TERMS OF USE</a>
-                <a href="#featured-players" className="hover:text-white">PRIVACY AUDIT</a>
-                <a href="#featured-players" className="hover:text-white">OFFICIAL RULES</a>
+                <a href={LEGAL_LINKS.terms} target="_blank" rel="noopener noreferrer" className="hover:text-white">TERMS & CONDITIONS</a>
+                <a href={LEGAL_LINKS.refund} target="_blank" rel="noopener noreferrer" className="hover:text-white">REFUND POLICY</a>
               </div>
             </div>
 
