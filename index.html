@@ -667,6 +667,14 @@
         }, 750);
       }, [introExiting]);
 
+      const unlockIntroSound = useCallback(() => {
+        const video = introVideoRef.current;
+        if (!video || (!video.muted && !video.paused)) return;
+        video.muted = false;
+        video.volume = 1;
+        video.play().catch(() => {});
+      }, []);
+
       useEffect(() => {
         setShowIntro(true);
         setSiteVisible(false);
@@ -1113,7 +1121,11 @@
       return (
         <>
           {showIntro && (
-            <div className={`intro-splash ${introExiting ? "intro-splash--out intro-splash--flash" : ""}`}>
+            <div
+              className={`intro-splash ${introExiting ? "intro-splash--out intro-splash--flash" : ""}`}
+              onPointerDown={unlockIntroSound}
+              onTouchStart={unlockIntroSound}
+            >
               <div className="intro-splash__frame">
                 <video
                   ref={introVideoRef}
