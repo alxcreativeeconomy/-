@@ -1127,6 +1127,20 @@
       && window.STRIPE_CONFIG.publishableKey
       && window.STRIPE_CONFIG.publishableKey !== "pk_test_YOUR_PUBLISHABLE_KEY";
 
+    const PRODUCTION_AUTH_ORIGIN = "https://playmzansi.online";
+
+    const getAuthContinueUrl = (authFlag) => {
+      const host = window.location.hostname;
+      const isLocal = host === "localhost" || host === "127.0.0.1";
+      const base = isLocal ? window.location.origin : PRODUCTION_AUTH_ORIGIN;
+      return `${base}?auth=${authFlag}`;
+    };
+
+    const buildAuthActionSettings = (authFlag) => ({
+      url: getAuthContinueUrl(authFlag),
+      handleCodeInApp: false,
+    });
+
     const mapAuthError = (error) => {
       const code = error?.code || "";
       const messages = {
@@ -1140,6 +1154,9 @@
         "auth/popup-closed-by-user": "Google sign-in was cancelled.",
         "auth/popup-blocked": "Pop-up blocked. Allow pop-ups for this site and retry.",
         "auth/account-exists-with-different-credential": "This email is linked to another sign-in method.",
+        "auth/expired-action-code": "This link has expired. Request a new email and try again.",
+        "auth/invalid-action-code": "This link is invalid or already used. Request a new email.",
+        "auth/weak-password": "Password must be at least 6 characters.",
       };
       return messages[code] || error?.message || "Authentication failed. Please try again.";
     };
@@ -1341,11 +1358,13 @@
       const [authSubmitting, setAuthSubmitting] = useState(false);
       const [showResendVerification, setShowResendVerification] = useState(false);
       const [purchasingPackId, setPurchasingPackId] = useState(null);
+      const [resetOobCode, setResetOobCode] = useState("");
+      const [resetEmail, setResetEmail] = useState("");
+      const [newPassword, setNewPassword] = useState("");
+      const [confirmPassword, setConfirmPassword] = useState("");
 
-      const emailVerificationSettings = {
-        url: window.location.origin,
-        handleCodeInApp: false,
-      };
+      const emailVerificationSettings = buildAuthActionSettings("verified");
+      const passwordResetSettings = buildAuthActionSettings("reset");
 
       // Live Simulator State
       const [currentStage, setCurrentStage] = useState(0); 
@@ -1484,6 +1503,10 @@
         setAuthPassword("");
         setAuthUsername("");
         setShowResendVerification(false);
+        setResetOobCode("");
+        setResetEmail("");
+        setNewPassword("");
+        setConfirmPassword("");
       }, []);
 
       const setUserFromFirebase = useCallback(async (firebaseUser) => {
@@ -1550,6 +1573,94 @@
         const nextUrl = `${window.location.pathname}${remaining ? `?${remaining}` : ""}${window.location.hash}`;
         window.history.replaceState({}, "", nextUrl);
       }, [setUserFromFirebase, showToast]);
+
+      useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const authFlag = params.get("auth");
+        if (!authFlag) return;
+
+        if (authFlag === "verified") {
+          setAuthMode("login");
+          setIsAuthModalOpen(true);
+          setAuthSuccess("Email verified! Sign in with your email and password to enter the draft room.");
+          showToast("Email verified. Log in to continue.", "success");
+        } else if (authFlag === "reset") {
+          setAuthMode("login");
+          setIsAuthModalOpen(true);
+          setAuthSuccess("Password updated successfully. Log in with your new password.");
+          showToast("Password reset complete. You can log in now.", "success");
+        }
+
+        params.delete("auth");
+        const remaining = params.toString();
+        const nextUrl = `${window.location.pathname}${remaining ? `?${remaining}` : ""}${window.location.hash}`;
+        window.history.replaceState({}, "", nextUrl);
+      }, [showToast]);
+
+      useEffect(() => {
+        if (!firebaseAuth) return;
+
+        const params = new URLSearchParams(window.location.search);
+        const mode = params.get("mode");
+        const oobCode = params.get("oobCode");
+        if (!mode || !oobCode) return;
+
+        let cancelled = false;
+
+        const clearAuthActionParams = () => {
+          params.delete("mode");
+          params.delete("oobCode");
+          params.delete("apiKey");
+          params.delete("continueUrl");
+          params.delete("lang");
+          const remaining = params.toString();
+          const nextUrl = `${window.location.pathname}${remaining ? `?${remaining}` : ""}${window.location.hash}`;
+          window.history.replaceState({}, "", nextUrl);
+        };
+
+        const handleAuthEmailAction = async () => {
+          try {
+            if (mode === "verifyEmail") {
+              await firebaseAuth.applyActionCode(oobCode);
+              if (cancelled) return;
+              clearAuthActionParams();
+              setAuthMode("login");
+              setIsAuthModalOpen(true);
+              setAuthSuccess("Email verified! Log in with your GoalKing profile.");
+              showToast("Email verified. You can log in now.", "success");
+            } else if (mode === "recoverEmail") {
+              await firebaseAuth.applyActionCode(oobCode);
+              if (cancelled) return;
+              clearAuthActionParams();
+              showToast("Email change reverted successfully.", "success");
+            } else if (mode === "resetPassword") {
+              const email = await firebaseAuth.verifyPasswordResetCode(oobCode);
+              if (cancelled) return;
+              clearAuthActionParams();
+              setResetOobCode(oobCode);
+              setResetEmail(email);
+              setAuthEmail(email);
+              setAuthMode("resetPassword");
+              setIsAuthModalOpen(true);
+              setAuthSuccess(`Choose a new password for ${email}.`);
+              showToast("Reset link confirmed. Enter your new password.", "info");
+            }
+          } catch (error) {
+            if (cancelled) return;
+            clearAuthActionParams();
+            const message = error?.code === "auth/invalid-action-code"
+              ? "This link is invalid or expired. Request a new confirmation email."
+              : (error?.message || "Could not complete this email action.");
+            setAuthMode("login");
+            setIsAuthModalOpen(true);
+            setAuthError(message);
+            showToast(message, "info");
+          }
+        };
+
+        handleAuthEmailAction();
+        return () => { cancelled = true; };
+      }, [showToast]);
 
       const handlePurchasePack = async (pack) => {
         if (!currentUser) {
@@ -1663,6 +1774,75 @@
           await setUserFromFirebase(credential.user);
           const displayName = profile?.username || authEmail.split("@")[0].toUpperCase();
           setAuthSuccess("Login successful! Welcome back.");
+          showToast(`Logged in as ${displayName}`);
+          setTimeout(closeAuthModal, 1200);
+        } catch (error) {
+          setAuthError(mapAuthError(error));
+        } finally {
+          setAuthSubmitting(false);
+        }
+      };
+
+      const handleForgotPassword = async (e) => {
+        e.preventDefault();
+        setAuthError("");
+        setAuthSuccess("");
+
+        if (!firebaseAuth) {
+          setAuthError("Firebase is not configured yet. Add keys locally to public/firebase-config.js or set GitHub Secrets for deploy.");
+          return;
+        }
+
+        if (!authEmail) {
+          setAuthError("Enter the email address linked to your GoalKing profile.");
+          return;
+        }
+
+        setAuthSubmitting(true);
+        try {
+          await firebaseAuth.sendPasswordResetEmail(authEmail, passwordResetSettings);
+          setAuthSuccess(`Password reset link sent to ${authEmail}. Check your inbox and spam folder.`);
+          showToast("Reset link sent. Check your email.", "info");
+        } catch (error) {
+          setAuthError(mapAuthError(error));
+        } finally {
+          setAuthSubmitting(false);
+        }
+      };
+
+      const handleConfirmPasswordReset = async (e) => {
+        e.preventDefault();
+        setAuthError("");
+        setAuthSuccess("");
+
+        if (!firebaseAuth) {
+          setAuthError("Firebase is not configured yet. Add keys locally to public/firebase-config.js or set GitHub Secrets for deploy.");
+          return;
+        }
+
+        if (!resetOobCode) {
+          setAuthError("This reset link is invalid. Request a new password reset email.");
+          return;
+        }
+
+        if (newPassword.length < 6) {
+          setAuthError("Password must be at least 6 characters.");
+          return;
+        }
+
+        if (newPassword !== confirmPassword) {
+          setAuthError("Passwords do not match. Please try again.");
+          return;
+        }
+
+        setAuthSubmitting(true);
+        try {
+          await firebaseAuth.confirmPasswordReset(resetOobCode, newPassword);
+          const credential = await firebaseAuth.signInWithEmailAndPassword(resetEmail, newPassword);
+          await setUserFromFirebase(credential.user);
+          const profile = await loadUserProfile(credential.user.uid);
+          const displayName = profile?.username || resetEmail.split("@")[0].toUpperCase();
+          setAuthSuccess("Password updated. Welcome back!");
           showToast(`Logged in as ${displayName}`);
           setTimeout(closeAuthModal, 1200);
         } catch (error) {
@@ -1892,8 +2072,15 @@
                 {/* Header */}
                 <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#041326]/85">
                   <h3 className="font-bebas text-3xl tracking-wider text-white">
-                    {authMode === "login" ? "SIGN IN TO " : "CREATE YOUR "}
-                    <span className="text-neon-gold">GOALKING PROFILE</span>
+                    {authMode === "forgot" ? (
+                      <>RESET YOUR <span className="text-neon-gold">PASSWORD</span></>
+                    ) : authMode === "resetPassword" ? (
+                      <>CHOOSE NEW <span className="text-neon-gold">PASSWORD</span></>
+                    ) : authMode === "login" ? (
+                      <>SIGN IN TO <span className="text-neon-gold">GOALKING PROFILE</span></>
+                    ) : (
+                      <>CREATE YOUR <span className="text-neon-gold">GOALKING PROFILE</span></>
+                    )}
                   </h3>
                   <button 
                     onClick={closeAuthModal}
@@ -1904,7 +2091,15 @@
                 </div>
 
                 {/* Form Body */}
-                <form onSubmit={authMode === "login" ? handleEmailLogIn : handleEmailSignUp} className="p-6 space-y-5 bg-[#030712]/95">
+                <form
+                  onSubmit={
+                    authMode === "login" ? handleEmailLogIn
+                      : authMode === "signup" ? handleEmailSignUp
+                      : authMode === "forgot" ? handleForgotPassword
+                      : handleConfirmPasswordReset
+                  }
+                  className="p-6 space-y-5 bg-[#030712]/95"
+                >
                   {authError && (
                     <div className="p-3 bg-red-950/50 border border-red-500/30 rounded-lg text-xs text-red-200 font-medium">
                       {authError}
@@ -1928,6 +2123,12 @@
                         Resend confirmation email
                       </button>
                     </div>
+                  )}
+
+                  {authMode === "forgot" && (
+                    <p className="text-xs text-gray-400 leading-relaxed">
+                      Enter your registered email and we will send you a secure link to reset your password.
+                    </p>
                   )}
 
                   {authMode === "signup" && (
@@ -1960,19 +2161,66 @@
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Security Password</label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-3 text-gray-500"><SVGIcons.Lock /></span>
-                      <input 
-                        type="password" 
-                        value={authPassword}
-                        onChange={(e) => setAuthPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full bg-[#050c18] border border-white/15 rounded-lg py-3 pl-11 pr-4 text-sm text-white gold-glow-border"
-                      />
+                  {authMode === "resetPassword" ? (
+                    <>
+                      <div>
+                        <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">New Password</label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-3 text-gray-500"><SVGIcons.Lock /></span>
+                          <input
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="At least 6 characters"
+                            className="w-full bg-[#050c18] border border-white/15 rounded-lg py-3 pl-11 pr-4 text-sm text-white gold-glow-border"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Confirm Password</label>
+                        <div className="relative">
+                          <span className="absolute left-3.5 top-3 text-gray-500"><SVGIcons.Lock /></span>
+                          <input
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Repeat new password"
+                            className="w-full bg-[#050c18] border border-white/15 rounded-lg py-3 pl-11 pr-4 text-sm text-white gold-glow-border"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  ) : authMode !== "forgot" && (
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest">Security Password</label>
+                        {authMode === "login" && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAuthMode("forgot");
+                              setAuthError("");
+                              setAuthSuccess("");
+                              setShowResendVerification(false);
+                            }}
+                            className="text-[10px] font-bold text-amber-400 hover:text-amber-300 uppercase tracking-wider bg-transparent border-0 cursor-pointer"
+                          >
+                            Forgot password?
+                          </button>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-3 text-gray-500"><SVGIcons.Lock /></span>
+                        <input
+                          type="password"
+                          value={authPassword}
+                          onChange={(e) => setAuthPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="w-full bg-[#050c18] border border-white/15 rounded-lg py-3 pl-11 pr-4 text-sm text-white gold-glow-border"
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <button
                     type="submit"
@@ -1980,43 +2228,51 @@
                     className="w-full py-3.5 rounded-lg btn-gold font-bold text-sm tracking-widest cursor-pointer mt-2 border-none disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {authSubmitting
-                      ? "VERIFYING..."
-                      : authMode === "login"
-                        ? "ENTER DRAFT ROOM"
-                        : "SECURE ENTRY CARD"}
+                      ? "PLEASE WAIT..."
+                      : authMode === "forgot"
+                        ? "SEND RESET LINK"
+                        : authMode === "resetPassword"
+                          ? "UPDATE PASSWORD"
+                          : authMode === "login"
+                            ? "ENTER DRAFT ROOM"
+                            : "SECURE ENTRY CARD"}
                   </button>
 
-                  <div className="relative py-2">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-white/10" />
-                    </div>
-                    <div className="relative flex justify-center text-[10px] uppercase tracking-widest">
-                      <span className="bg-[#030712] px-3 text-gray-500">or continue with</span>
-                    </div>
-                  </div>
+                  {(authMode === "login" || authMode === "signup") && (
+                    <>
+                      <div className="relative py-2">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-white/10" />
+                        </div>
+                        <div className="relative flex justify-center text-[10px] uppercase tracking-widest">
+                          <span className="bg-[#030712] px-3 text-gray-500">or continue with</span>
+                        </div>
+                      </div>
 
-                  <button
-                    type="button"
-                    onClick={handleGoogleSignIn}
-                    disabled={authSubmitting || authLoading}
-                    className="w-full py-3 rounded-lg border border-white/15 bg-white text-[#030712] font-bold text-sm tracking-wide flex items-center justify-center gap-3 hover:bg-gray-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
-                      <path fill="#EA4335" d="M12 10.2v3.6h5.1c-.2 1.2-1.6 3.5-5.1 3.5-3.1 0-5.6-2.5-5.6-5.6s2.5-5.6 5.6-5.6c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.9 3.6 14.7 2.6 12 2.6 6.9 2.6 2.7 6.8 2.7 12s4.2 9.4 9.3 9.4c5.4 0 9-3.8 9-9.1 0-.6-.1-1.1-.2-1.6H12z"/>
-                      <path fill="#34A853" d="M3.6 7.4l3 2.2C7.5 7.8 9.6 6.4 12 6.4c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.9 3.6 14.7 2.6 12 2.6 8.5 2.6 5.5 4.8 4.2 8l-2.5-1.9-.1.3z"/>
-                      <path fill="#4A90E2" d="M12 21.4c2.7 0 5-0.9 6.7-2.4l-3.1-2.5c-.9.6-2 1-3.6 1-2.8 0-5.1-1.9-5.9-4.5l-3.1 2.4c1.6 3.2 4.9 5 9 5z"/>
-                      <path fill="#FBBC05" d="M21.8 12.3c0-.6-.1-1.1-.2-1.6H12v3.6h5.5c-.2 1.1-.9 2.7-2.5 3.7l3.1 2.5c1.8-1.7 3.7-4.2 3.7-8.2z"/>
-                    </svg>
-                    Continue with Google
-                  </button>
+                      <button
+                        type="button"
+                        onClick={handleGoogleSignIn}
+                        disabled={authSubmitting || authLoading}
+                        className="w-full py-3 rounded-lg border border-white/15 bg-white text-[#030712] font-bold text-sm tracking-wide flex items-center justify-center gap-3 hover:bg-gray-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+                          <path fill="#EA4335" d="M12 10.2v3.6h5.1c-.2 1.2-1.6 3.5-5.1 3.5-3.1 0-5.6-2.5-5.6-5.6s2.5-5.6 5.6-5.6c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.9 3.6 14.7 2.6 12 2.6 6.9 2.6 2.7 6.8 2.7 12s4.2 9.4 9.3 9.4c5.4 0 9-3.8 9-9.1 0-.6-.1-1.1-.2-1.6H12z"/>
+                          <path fill="#34A853" d="M3.6 7.4l3 2.2C7.5 7.8 9.6 6.4 12 6.4c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.9 3.6 14.7 2.6 12 2.6 8.5 2.6 5.5 4.8 4.2 8l-2.5-1.9-.1.3z"/>
+                          <path fill="#4A90E2" d="M12 21.4c2.7 0 5-0.9 6.7-2.4l-3.1-2.5c-.9.6-2 1-3.6 1-2.8 0-5.1-1.9-5.9-4.5l-3.1 2.4c1.6 3.2 4.9 5 9 5z"/>
+                          <path fill="#FBBC05" d="M21.8 12.3c0-.6-.1-1.1-.2-1.6H12v3.6h5.5c-.2 1.1-.9 2.7-2.5 3.7l3.1 2.5c1.8-1.7 3.7-4.2 3.7-8.2z"/>
+                        </svg>
+                        Continue with Google
+                      </button>
+                    </>
+                  )}
 
                   <div className="text-center pt-4 border-t border-white/10 text-xs text-gray-400">
                     {authMode === "login" ? (
                       <span>
                         New contestant?{" "}
-                        <button 
-                          type="button" 
-                        onClick={() => {
+                        <button
+                          type="button"
+                          onClick={() => {
                             setAuthMode("signup");
                             setAuthError("");
                             setAuthSuccess("");
@@ -2027,11 +2283,29 @@
                           Create profile
                         </button>
                       </span>
+                    ) : authMode === "forgot" || authMode === "resetPassword" ? (
+                      <span>
+                        Remembered it?{" "}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAuthMode("login");
+                            setAuthError("");
+                            setAuthSuccess("");
+                            setResetOobCode("");
+                            setNewPassword("");
+                            setConfirmPassword("");
+                          }}
+                          className="text-amber-400 font-bold hover:underline ml-1 bg-transparent border-none cursor-pointer"
+                        >
+                          Back to log in
+                        </button>
+                      </span>
                     ) : (
                       <span>
                         Already registered?{" "}
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => {
                             setAuthMode("login");
                             setAuthError("");
