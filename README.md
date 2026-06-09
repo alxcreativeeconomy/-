@@ -85,3 +85,17 @@ Firebase Console → **goalking-2026** → **Authentication** → **Settings** �
 | Firebase | Auth + Firestore (API key restricted by domain in Google Cloud) |
 
 After propagation, the site should load at **https://playmzansi.online**.
+
+### 7) Email for user support (free via Cloudflare)
+
+Keep your **5 web records** as they are. Email uses **separate MX/TXT records** — they do not conflict.
+
+1. Cloudflare → **Email** → **Email Routing** → **Get started**
+2. **Destination address:** your real inbox (e.g. your Gmail) — verify the code Cloudflare emails you
+3. **Custom address:** create `support@playmzansi.online` → forward to that inbox
+4. Cloudflare will auto-add MX + SPF (and DKIM) DNS records — approve them when prompted
+5. Send a test email to `support@playmzansi.online` and confirm it arrives
+
+Public contact on the site: **support@playmzansi.online**
+
+Optional extra addresses: `hello@`, `help@` → same inbox.
