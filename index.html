@@ -4,8 +4,21 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FIFA World Cup GoalKing Draft 2026</title>
-  <link rel="icon" type="image/svg+xml" href="/logo.svg" />
-  <link rel="apple-touch-icon" href="/logo.svg" />
+  <script>
+    (function () {
+      var path = window.location.pathname || "/";
+      var base = "/";
+      if (window.location.hostname.endsWith("github.io") && path.indexOf("/-/") === 0) {
+        base = "/-/";
+      }
+      var tag = document.createElement("base");
+      tag.href = base;
+      document.head.appendChild(tag);
+      window.__ASSET_BASE__ = base;
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <link rel="apple-touch-icon" href="logo.svg" />
   
   <!-- CDNs for Live React & Tailwind Environment -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -18,8 +31,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
-  <script src="/firebase-config.js"></script>
-  <script src="/stripe-config.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="stripe-config.js"></script>
 
   <!-- Premium Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -460,22 +473,24 @@
       { id: "platinum", name: "Platinum", tokens: 150, value: "R150", color: "#e5e4e2", description: "Ultimate access ticket to the VIP finals sweepstakes.", featured: false }
     ];
 
+    const assetPath = (path) => `${window.__ASSET_BASE__ || "/"}${path.replace(/^\//, "")}`;
+
     const SPONSORS = [
-      { id: "adidas", name: "Adidas", logo: "/sponsors/adidas.svg" },
-      { id: "cocacola", name: "Coca-Cola", logo: "/sponsors/cocacola.svg" },
-      { id: "visa", name: "Visa", logo: "/sponsors/visa.svg" },
-      { id: "hyundai", name: "Hyundai", logo: "/sponsors/hyundai.svg" },
-      { id: "qatar", name: "Qatar Airways", logo: "/sponsors/qatar.svg" },
-      { id: "lenovo", name: "Lenovo", logo: "/sponsors/lenovo.svg" },
-      { id: "mcdonalds", name: "McDonald's", logo: "/sponsors/mcdonalds.svg" },
-      { id: "puma", name: "Puma", logo: "/sponsors/puma.svg" },
-      { id: "nike", name: "Nike", logo: "/sponsors/nike.svg" },
-      { id: "budweiser", name: "Budweiser", logo: "/sponsors/budweiser.svg" },
-      { id: "byjus", name: "BYJU'S", logo: "/sponsors/byjus.svg" },
-      { id: "hisense", name: "Hisense", logo: "/sponsors/hisense.svg" },
-      { id: "vivo", name: "Vivo", logo: "/sponsors/vivo.svg" },
-      { id: "fifa", name: "FIFA+", logo: "/sponsors/fifa.svg" },
-      { id: "verizon", name: "Verizon", logo: "/sponsors/verizon.svg" }
+      { id: "adidas", name: "Adidas", logo: assetPath("sponsors/adidas.svg") },
+      { id: "cocacola", name: "Coca-Cola", logo: assetPath("sponsors/cocacola.svg") },
+      { id: "visa", name: "Visa", logo: assetPath("sponsors/visa.svg") },
+      { id: "hyundai", name: "Hyundai", logo: assetPath("sponsors/hyundai.svg") },
+      { id: "qatar", name: "Qatar Airways", logo: assetPath("sponsors/qatar.svg") },
+      { id: "lenovo", name: "Lenovo", logo: assetPath("sponsors/lenovo.svg") },
+      { id: "mcdonalds", name: "McDonald's", logo: assetPath("sponsors/mcdonalds.svg") },
+      { id: "puma", name: "Puma", logo: assetPath("sponsors/puma.svg") },
+      { id: "nike", name: "Nike", logo: assetPath("sponsors/nike.svg") },
+      { id: "budweiser", name: "Budweiser", logo: assetPath("sponsors/budweiser.svg") },
+      { id: "byjus", name: "BYJU'S", logo: assetPath("sponsors/byjus.svg") },
+      { id: "hisense", name: "Hisense", logo: assetPath("sponsors/hisense.svg") },
+      { id: "vivo", name: "Vivo", logo: assetPath("sponsors/vivo.svg") },
+      { id: "fifa", name: "FIFA+", logo: assetPath("sponsors/fifa.svg") },
+      { id: "verizon", name: "Verizon", logo: assetPath("sponsors/verizon.svg") }
     ];
 
     const SVGIcons = {
@@ -1083,7 +1098,7 @@
                 <video
                   ref={introVideoRef}
                   key="goalking-intro"
-                  src="/goalking.mp4"
+                  src={assetPath("goalking.mp4")}
                   autoPlay
                   muted
                   playsInline
@@ -1305,7 +1320,7 @@
             className="fixed top-0 left-0 right-0 h-20 z-50 flex items-center justify-between gap-2 px-4 sm:px-6 md:px-12 border-b border-amber-400/15 transition-all duration-300"
           >
             <div className="flex items-center gap-2 sm:gap-3 cursor-pointer shrink-0" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
-              <img src="/logo.svg" alt="GoalKing" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full shadow-[0_0_15px_rgba(244,197,66,0.25)]" />
+              <img src={assetPath("logo.svg")} alt="GoalKing" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full shadow-[0_0_15px_rgba(244,197,66,0.25)]" />
               <span className="font-bebas text-xl sm:text-2xl tracking-wider text-white hidden min-[400px]:inline">
                 GOAL<span className="text-amber-400">KING</span>
                 <span className="text-white/40 text-xs tracking-normal ml-1 sm:ml-2 font-sans font-medium">2026</span>
@@ -1531,7 +1546,7 @@
                     </p>
                   </div>
                   <div className="prize-winner-frame">
-                    <img src="/cashwinner.jpg" alt="South Africa GoalKing R100,000 cash prize winner" className="prize-winner-img" />
+                    <img src={assetPath("cashwinner.jpg")} alt="South Africa GoalKing R100,000 cash prize winner" className="prize-winner-img" />
                     <div className="prize-winner-caption-bg" />
                     <div className="absolute bottom-3 left-4 right-4 z-20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                       <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">OFFICIAL R100,000 CASH WINNER</span>
@@ -1555,7 +1570,7 @@
                     </p>
                   </div>
                   <div className="prize-winner-frame">
-                    <img src="/carwinner.jpg" alt="GoalKing Hyundai vehicle prize winner" className="prize-winner-img" />
+                    <img src={assetPath("carwinner.jpg")} alt="GoalKing Hyundai vehicle prize winner" className="prize-winner-img" />
                     <div className="prize-winner-caption-bg" />
                     <div className="absolute bottom-3 left-4 right-4 z-20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                       <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">OFFICIAL VEHICLE WINNER</span>
