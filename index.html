@@ -239,32 +239,50 @@
       padding: 0 0.5rem;
     }
 
-    .intro-sound-btn {
+    .intro-play-btn {
       position: absolute;
-      bottom: 1.25rem;
-      left: 50%;
-      transform: translateX(-50%);
+      inset: 0;
       z-index: 20;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.65rem 1.25rem;
-      border-radius: 9999px;
-      border: 1px solid rgba(244, 197, 66, 0.45);
-      background: rgba(0, 0, 0, 0.75);
+      justify-content: center;
+      gap: 0.75rem;
+      border: none;
+      background: rgba(0, 0, 0, 0.35);
+      cursor: pointer;
+      transition: background 0.25s ease;
+    }
+
+    .intro-play-btn:hover {
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .intro-play-btn__circle {
+      width: 4.5rem;
+      height: 4.5rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid rgba(244, 197, 66, 0.55);
+      background: rgba(0, 0, 0, 0.7);
+      color: #f4c542;
+      box-shadow: 0 0 24px rgba(244, 197, 66, 0.25);
+      animation: playPulse 2s ease-in-out infinite;
+    }
+
+    .intro-play-btn__label {
       color: #f4c542;
       font-size: 10px;
       font-weight: 800;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
-      cursor: pointer;
-      backdrop-filter: blur(8px);
-      animation: soundPulse 2s ease-in-out infinite;
     }
 
-    @keyframes soundPulse {
+    @keyframes playPulse {
       0%, 100% { box-shadow: 0 0 0 0 rgba(244, 197, 66, 0.35); }
-      50% { box-shadow: 0 0 0 8px rgba(244, 197, 66, 0); }
+      50% { box-shadow: 0 0 0 10px rgba(244, 197, 66, 0); }
     }
 
     .nav-pill-link:hover {
@@ -623,6 +641,7 @@
       const [activeNav, setActiveNav] = useState("home");
       const [showIntro, setShowIntro] = useState(true);
       const [introExiting, setIntroExiting] = useState(false);
+      const [introPlaying, setIntroPlaying] = useState(false);
       const [siteVisible, setSiteVisible] = useState(false);
       const [simulationFocus, setSimulationFocus] = useState(false);
       const [lastRoundGoals, setLastRoundGoals] = useState(0);
@@ -667,24 +686,18 @@
         }, 750);
       }, [introExiting]);
 
-      const unlockIntroSound = useCallback(() => {
-        const video = introVideoRef.current;
-        if (!video || (!video.muted && !video.paused)) return;
-        video.muted = false;
-        video.volume = 1;
-        video.play().catch(() => {});
-      }, []);
-
       useEffect(() => {
         setShowIntro(true);
         setSiteVisible(false);
         setIntroExiting(false);
+        setIntroPlaying(false);
 
         const handlePageShow = (event) => {
           if (event.persisted) {
             setShowIntro(true);
             setSiteVisible(false);
             setIntroExiting(false);
+            setIntroPlaying(false);
           }
         };
         window.addEventListener("pageshow", handlePageShow);
@@ -694,38 +707,6 @@
       useEffect(() => {
         document.body.style.overflow = showIntro ? "hidden" : "";
         return () => { document.body.style.overflow = ""; };
-      }, [showIntro]);
-
-      useEffect(() => {
-        if (!showIntro) return undefined;
-
-        const video = introVideoRef.current;
-        if (!video) return undefined;
-
-        const playWithSound = async () => {
-          video.volume = 1;
-          video.muted = false;
-          try {
-            await video.play();
-            return;
-          } catch {
-            video.muted = true;
-            try {
-              await video.play();
-              video.muted = false;
-            } catch {
-              /* Browser blocked autoplay entirely */
-            }
-          }
-        };
-
-        if (video.readyState >= 2) {
-          playWithSound();
-        } else {
-          video.addEventListener("loadeddata", playWithSound, { once: true });
-        }
-
-        return () => video.removeEventListener("loadeddata", playWithSound);
       }, [showIntro]);
 
       const handleNavClick = useCallback((item) => {
@@ -773,6 +754,18 @@
         setToast({ msg, type });
         setTimeout(() => setToast(null), 3500);
       }, []);
+
+      const playIntroVideo = useCallback(() => {
+        const video = introVideoRef.current;
+        if (!video) return;
+        video.muted = false;
+        video.volume = 1;
+        video.play()
+          .then(() => setIntroPlaying(true))
+          .catch(() => {
+            showToast("Could not play video. Tap play to try again.", "info");
+          });
+      }, [showToast]);
 
       const closeAuthModal = useCallback(() => {
         setIsAuthModalOpen(false);
@@ -1121,22 +1114,35 @@
       return (
         <>
           {showIntro && (
-            <div
-              className={`intro-splash ${introExiting ? "intro-splash--out intro-splash--flash" : ""}`}
-              onPointerDown={unlockIntroSound}
-              onTouchStart={unlockIntroSound}
-            >
+            <div className={`intro-splash ${introExiting ? "intro-splash--out intro-splash--flash" : ""}`}>
               <div className="intro-splash__frame">
                 <video
                   ref={introVideoRef}
                   key="goalking-intro"
                   src={assetPath("goalking.mp4")}
-                  autoPlay
                   playsInline
+                  preload="metadata"
+                  poster={assetPath("logo.svg")}
+                  onPlay={() => setIntroPlaying(true)}
                   onEnded={dismissIntro}
                   onError={dismissIntro}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
+                {!introPlaying && (
+                  <button
+                    type="button"
+                    onClick={playIntroVideo}
+                    className="intro-play-btn"
+                    aria-label="Play intro video"
+                  >
+                    <span className="intro-play-btn__circle">
+                      <svg width="28" height="28" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </span>
+                    <span className="intro-play-btn__label">Play Intro</span>
+                  </button>
+                )}
               </div>
               <button
                 onClick={dismissIntro}
