@@ -9,6 +9,8 @@
  *   FIREBASE_STORAGE_BUCKET, FIREBASE_MESSAGING_SENDER_ID, FIREBASE_APP_ID
  *
  * After any leak, rotate the API key in Google Cloud Console and update secrets.
+ *
+ * Authorized domains for auth: playmzansi.online, www.playmzansi.online
  */
 window.FIREBASE_CONFIG = {
   apiKey: "YOUR_API_KEY",

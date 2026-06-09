@@ -15,14 +15,23 @@ Open `http://localhost:5174`.
 
 Pushes to `main` deploy automatically to GitHub Pages.
 
-**Custom domain:** `playmzansi.qd.je`
+**Custom domain:** `https://playmzansi.online`
 
-### DNS (at your qd.je registrar)
+### DNS (Namecheap → Advanced DNS)
 
-| Type  | Name        | Value                      |
-|-------|-------------|----------------------------|
-| CNAME | playmzansi  | alxcreativeeconomy.github.io |
+Add these records for `playmzansi.online`:
 
-Then in GitHub: **Settings → Pages → Custom domain** → enter `playmzansi.qd.je`.
+| Type | Host | Value |
+|------|------|-------|
+| A Record | `@` | `185.199.108.153` |
+| A Record | `@` | `185.199.109.153` |
+| A Record | `@` | `185.199.110.153` |
+| A Record | `@` | `185.199.111.153` |
+| CNAME Record | `www` | `alxcreativeeconomy.github.io.` |
 
-Also add `playmzansi.qd.je` to Firebase **Authentication → Authorized domains**.
+Then in GitHub: **Settings → Pages → Custom domain** → enter `playmzansi.online` and enable **Enforce HTTPS**.
+
+Also add these to Firebase **Authentication → Authorized domains**:
+
+- `playmzansi.online`
+- `www.playmzansi.online`
