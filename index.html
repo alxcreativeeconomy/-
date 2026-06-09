@@ -624,7 +624,6 @@
       const [showIntro, setShowIntro] = useState(true);
       const [introExiting, setIntroExiting] = useState(false);
       const [siteVisible, setSiteVisible] = useState(false);
-      const [introSoundOn, setIntroSoundOn] = useState(false);
       const [simulationFocus, setSimulationFocus] = useState(false);
       const [lastRoundGoals, setLastRoundGoals] = useState(0);
       const introVideoRef = useRef(null);
@@ -668,27 +667,16 @@
         }, 750);
       }, [introExiting]);
 
-      const enableIntroSound = useCallback(() => {
-        const video = introVideoRef.current;
-        if (!video) return;
-        video.muted = false;
-        video.volume = 1;
-        video.play().catch(() => {});
-        setIntroSoundOn(true);
-      }, []);
-
       useEffect(() => {
         setShowIntro(true);
         setSiteVisible(false);
         setIntroExiting(false);
-        setIntroSoundOn(false);
 
         const handlePageShow = (event) => {
           if (event.persisted) {
             setShowIntro(true);
             setSiteVisible(false);
             setIntroExiting(false);
-            setIntroSoundOn(false);
           }
         };
         window.addEventListener("pageshow", handlePageShow);
@@ -698,6 +686,38 @@
       useEffect(() => {
         document.body.style.overflow = showIntro ? "hidden" : "";
         return () => { document.body.style.overflow = ""; };
+      }, [showIntro]);
+
+      useEffect(() => {
+        if (!showIntro) return undefined;
+
+        const video = introVideoRef.current;
+        if (!video) return undefined;
+
+        const playWithSound = async () => {
+          video.volume = 1;
+          video.muted = false;
+          try {
+            await video.play();
+            return;
+          } catch {
+            video.muted = true;
+            try {
+              await video.play();
+              video.muted = false;
+            } catch {
+              /* Browser blocked autoplay entirely */
+            }
+          }
+        };
+
+        if (video.readyState >= 2) {
+          playWithSound();
+        } else {
+          video.addEventListener("loadeddata", playWithSound, { once: true });
+        }
+
+        return () => video.removeEventListener("loadeddata", playWithSound);
       }, [showIntro]);
 
       const handleNavClick = useCallback((item) => {
@@ -1100,22 +1120,11 @@
                   key="goalking-intro"
                   src={assetPath("goalking.mp4")}
                   autoPlay
-                  muted
                   playsInline
                   onEnded={dismissIntro}
                   onError={dismissIntro}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
-                {!introSoundOn && (
-                  <button
-                    type="button"
-                    onClick={enableIntroSound}
-                    className="intro-sound-btn"
-                  >
-                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                    Tap for Sound
-                  </button>
-                )}
               </div>
               <button
                 onClick={dismissIntro}
