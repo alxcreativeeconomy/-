@@ -1591,7 +1591,7 @@
         setAuthSuccess("");
 
         if (!firebaseAuth) {
-          setAuthError("Firebase is not configured yet. Add your keys to public/firebase-config.js.");
+          setAuthError("Firebase is not configured yet. Add keys locally to public/firebase-config.js or set GitHub Secrets for deploy.");
           return;
         }
 
@@ -1630,7 +1630,7 @@
         setAuthSuccess("");
 
         if (!firebaseAuth) {
-          setAuthError("Firebase is not configured yet. Add your keys to public/firebase-config.js.");
+          setAuthError("Firebase is not configured yet. Add keys locally to public/firebase-config.js or set GitHub Secrets for deploy.");
           return;
         }
 
@@ -1671,7 +1671,7 @@
         setAuthSuccess("");
 
         if (!firebaseAuth) {
-          setAuthError("Firebase is not configured yet. Add your keys to public/firebase-config.js.");
+          setAuthError("Firebase is not configured yet. Add keys locally to public/firebase-config.js or set GitHub Secrets for deploy.");
           return;
         }
 
@@ -1711,7 +1711,7 @@
         setAuthSuccess("");
 
         if (!firebaseAuth) {
-          setAuthError("Firebase is not configured yet. Add your keys to public/firebase-config.js.");
+          setAuthError("Firebase is not configured yet. Add keys locally to public/firebase-config.js or set GitHub Secrets for deploy.");
           return;
         }
 
@@ -2043,7 +2043,7 @@
                 <div className="p-4 bg-[#041326] text-[10px] text-gray-400 border-t border-white/5 text-center px-6">
                   {firebaseReady
                     ? "Profiles are secured with Firebase Auth and stored in your Firestore database."
-                    : "Add your Firebase web config to public/firebase-config.js to enable live sign-in."}
+                    : "Add Firebase config locally or via GitHub Secrets to enable live sign-in."}
                 </div>
 
               </div>

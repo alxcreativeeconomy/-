@@ -14,6 +14,10 @@ dist-ssr
 functions/node_modules/
 functions/.env
 
+# Local runtime config (injected in CI from GitHub Secrets)
+public/firebase-config.js
+public/stripe-config.js
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
