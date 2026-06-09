@@ -913,11 +913,11 @@
     };
 
     const STADIUM_SOUNDS = {
-      ambience: assetPath("sounds/stadium-ambience.mp3"),
-      kick: assetPath("sounds/kick.mp3"),
-      crowdBuild: assetPath("sounds/crowd-build.mp3"),
+      chantLoop: assetPath("sounds/stadium-ambience.mp3"),
+      crowdChant: assetPath("sounds/crowd-build.mp3"),
       goalRoar: assetPath("sounds/goal-roar.mp3"),
       crowdCheer: assetPath("sounds/crowd-cheer.mp3"),
+      kick: assetPath("sounds/kick.mp3"),
       commentary: (playerId) => assetPath(`sounds/commentary/player-${playerId}.mp3`),
     };
 
@@ -976,37 +976,30 @@
         window.speechSynthesis.speak(line);
       };
 
-      const triggerGoalMoment = (commentaryAudio) => {
+      const triggerGoalMoment = () => {
         const profile = PLAYER_AUDIO[player.id] || {};
         const isSiuu = profile.style === "siuu";
         const isStriker = player.cat === "striker";
-        const roarVol = isSiuu ? 1 : isStriker ? 0.85 : 0.65;
-        const cheerVol = isSiuu ? 0.95 : isStriker ? 0.78 : 0.58;
+        const roarVol = isSiuu ? 0.95 : isStriker ? 0.82 : 0.62;
+        const cheerVol = isSiuu ? 0.92 : isStriker ? 0.75 : 0.55;
 
-        playClip(STADIUM_SOUNDS.goalRoar, { volume: roarVol });
-        timers.push(setTimeout(() => playClip(STADIUM_SOUNDS.crowdCheer, { volume: cheerVol }), isSiuu ? 350 : 220));
-        if (isSiuu) {
-          timers.push(setTimeout(() => playClip(STADIUM_SOUNDS.crowdBuild, { volume: 0.55 }), 1100));
+        if (isStriker) {
+          playClip(STADIUM_SOUNDS.kick, { volume: 0.45 });
         }
+        playClip(STADIUM_SOUNDS.crowdChant, { volume: roarVol * 0.55, delay: 80 });
+        playClip(STADIUM_SOUNDS.goalRoar, { volume: roarVol, delay: 160 });
+        timers.push(setTimeout(() => playClip(STADIUM_SOUNDS.crowdCheer, { volume: cheerVol }), isSiuu ? 320 : 200));
       };
 
       const start = () => {
-        playClip(STADIUM_SOUNDS.ambience, { volume: 0.22, loop: true, delay: 0 });
-
-        if (player.cat === "striker") {
-          playClip(STADIUM_SOUNDS.kick, { volume: 0.55, delay: 180 });
-          playClip(STADIUM_SOUNDS.crowdBuild, { volume: 0.38, delay: 420 });
-        } else {
-          playClip(STADIUM_SOUNDS.kick, { volume: 0.35, delay: 260 });
-        }
-
-        const commentary = playClip(STADIUM_SOUNDS.commentary(player.id), { volume: 0.95, delay: 620 });
+        const commentary = playClip(STADIUM_SOUNDS.commentary(player.id), { volume: 1, delay: 0 });
+        playClip(STADIUM_SOUNDS.chantLoop, { volume: 0.14, loop: true, delay: 500 });
         if (commentary) {
           commentary.addEventListener("error", speakFallback);
           commentary.addEventListener("loadedmetadata", () => {
             const goalAtRatio = PLAYER_AUDIO[player.id]?.goalAt ?? (player.cat === "striker" ? 0.72 : 0.88);
             const triggerMs = Math.max(900, (commentary.duration || 3.2) * goalAtRatio * 1000);
-            timers.push(setTimeout(() => triggerGoalMoment(commentary), triggerMs));
+            timers.push(setTimeout(() => triggerGoalMoment(), triggerMs));
           });
         } else {
           speakFallback();
@@ -1015,8 +1008,8 @@
       };
 
       const confirm = () => {
-        playClip(STADIUM_SOUNDS.crowdCheer, { volume: 0.9, delay: 0 });
-        playClip(STADIUM_SOUNDS.goalRoar, { volume: 0.7, delay: 120 });
+        playClip(STADIUM_SOUNDS.crowdCheer, { volume: 0.88, delay: 0 });
+        playClip(STADIUM_SOUNDS.crowdChant, { volume: 0.6, delay: 100 });
       };
 
       return { start, confirm, fadeOutAll };
