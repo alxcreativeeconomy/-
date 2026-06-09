@@ -1,0 +1,2110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FIFA World Cup GoalKing Draft 2026</title>
+  <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+  <link rel="apple-touch-icon" href="/logo.svg" />
+  
+  <!-- CDNs for Live React & Tailwind Environment -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Firebase (Auth + Firestore) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
+  <script src="/firebase-config.js"></script>
+  <script src="/stripe-config.js"></script>
+
+  <!-- Premium Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    .font-bebas { font-family: 'Bebas Neue', sans-serif; }
+    .font-cond { font-family: 'Barlow Condensed', sans-serif; }
+    .font-sans { font-family: 'Barlow', sans-serif; }
+
+    html { scroll-behavior: smooth; background-color: #030712; }
+    
+    /* Premium Glassmorphic Broadcast Panel Styling */
+    .glass-panel-gold {
+      background: rgba(3, 11, 26, 0.85);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid rgba(244, 197, 66, 0.2);
+      box-shadow: 0 20px 50px 0 rgba(0, 0, 0, 0.8);
+    }
+
+    .text-neon-gold {
+      color: #f4c542;
+      text-shadow: 0 0 12px rgba(244, 197, 66, 0.45);
+    }
+
+    .gold-glow-border:focus {
+      border-color: #f4c542 !important;
+      box-shadow: 0 0 15px rgba(244, 197, 66, 0.4) !important;
+      outline: none;
+    }
+
+    .btn-gold {
+      background: linear-gradient(90deg, #f4c542, #c8991e);
+      color: #030712;
+      font-weight: 800;
+      text-transform: uppercase;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-gold:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(244, 197, 66, 0.5);
+      filter: brightness(1.15);
+    }
+
+    /* 3D Coin Rotation */
+    @keyframes rotateCoin {
+      0% { transform: translateY(0) rotateY(0deg) scale(1); }
+      50% { transform: translateY(-12px) rotateY(180deg) scale(1.05); }
+      100% { transform: translateY(0) rotateY(360deg) scale(1); }
+    }
+
+    .animated-coin-bg {
+      animation: rotateCoin 6s ease-in-out infinite;
+    }
+
+    /* FUT Cards Hover Breakout */
+    .fut-card-wrapper {
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+    }
+    .fut-card-wrapper:hover {
+      transform: translateY(-14px) scale(1.03);
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.9);
+    }
+
+    .sponsor-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 5rem;
+      padding: 1rem 1.25rem;
+      background: rgba(9, 9, 11, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 0.75rem;
+      transition: all 0.3s ease;
+    }
+
+    .sponsor-card:hover {
+      border-color: rgba(244, 197, 66, 0.25);
+      background: rgba(24, 24, 27, 0.8);
+      transform: translateY(-2px);
+    }
+
+    .sponsor-logo {
+      height: 2rem;
+      width: auto;
+      max-width: 6.5rem;
+      object-fit: contain;
+      opacity: 0.55;
+      transition: all 0.3s ease;
+    }
+
+    .sponsor-card:hover .sponsor-logo {
+      opacity: 1;
+      transform: scale(1.06);
+    }
+
+    .mzansi-side-blend {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: min(34vw, 460px);
+      pointer-events: none;
+      z-index: 5;
+      overflow: hidden;
+    }
+
+    .mzansi-side-blend img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.42;
+    }
+
+    .mzansi-side-blend--left img {
+      object-position: 70% center;
+      mask-image: linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.35) 55%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.35) 55%, transparent 100%);
+    }
+
+    .mzansi-side-blend--right img {
+      object-position: 30% center;
+      mask-image: linear-gradient(to left, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.35) 55%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.35) 55%, transparent 100%);
+    }
+
+    .mzansi-flag-stripe {
+      height: 4px;
+      background: linear-gradient(90deg, #007A4D 0%, #007A4D 20%, #FFB612 20%, #FFB612 40%, #000000 40%, #000000 55%, #007A4D 55%, #007A4D 75%, #DE3831 75%, #DE3831 90%, #002395 90%, #002395 100%);
+    }
+
+    .mzansi-glow {
+      background: radial-gradient(ellipse at 20% 50%, rgba(0, 122, 77, 0.18) 0%, transparent 55%),
+                  radial-gradient(ellipse at 80% 50%, rgba(255, 182, 18, 0.12) 0%, transparent 55%);
+    }
+
+    .section-stadium-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .section-stadium-bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scale(1.04);
+    }
+
+    .section-stadium-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(2, 5, 12, 0.92) 0%, rgba(2, 5, 12, 0.82) 45%, rgba(2, 5, 12, 0.94) 100%);
+    }
+
+    .nav-pill-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.35rem;
+      border-radius: 9999px;
+      background: rgba(4, 19, 38, 0.75);
+      border: 1px solid rgba(244, 197, 66, 0.15);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .nav-pill-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.5rem 0.85rem;
+      min-width: 2.75rem;
+      min-height: 2.75rem;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #9ca3af;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .nav-pill-link svg {
+      width: 1.125rem;
+      height: 1.125rem;
+      flex-shrink: 0;
+      display: block;
+    }
+
+    .nav-mobile-wrap {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      min-width: 0;
+      padding: 0 0.5rem;
+    }
+
+    .intro-sound-btn {
+      position: absolute;
+      bottom: 1.25rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.25rem;
+      border-radius: 9999px;
+      border: 1px solid rgba(244, 197, 66, 0.45);
+      background: rgba(0, 0, 0, 0.75);
+      color: #f4c542;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      animation: soundPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes soundPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(244, 197, 66, 0.35); }
+      50% { box-shadow: 0 0 0 8px rgba(244, 197, 66, 0); }
+    }
+
+    .nav-pill-link:hover {
+      color: #f4c542;
+      background: rgba(244, 197, 66, 0.08);
+    }
+
+    .nav-pill-link--active {
+      color: #030712;
+      background: linear-gradient(90deg, #f4c542, #e6b52e);
+      box-shadow: 0 4px 14px rgba(244, 197, 66, 0.35);
+    }
+
+    .nav-pill-link--active:hover {
+      color: #030712;
+      background: linear-gradient(90deg, #f4c542, #e6b52e);
+    }
+
+    .intro-splash {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      transition: opacity 0.6s ease;
+      padding: 1rem;
+    }
+
+    .intro-splash__frame {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-width: min(94vw, 400px);
+      max-height: min(82vh, 720px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 0 50px rgba(244, 197, 66, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    @media (min-width: 640px) {
+      .intro-splash__frame {
+        max-width: min(78vw, 640px);
+        max-height: min(86vh, 860px);
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .intro-splash {
+        padding: 2rem;
+      }
+      .intro-splash__frame {
+        max-width: min(68vw, 960px);
+        max-height: min(88vh, 940px);
+        border-radius: 18px;
+      }
+    }
+
+    @media (min-width: 1536px) {
+      .intro-splash__frame {
+        max-width: min(58vw, 1200px);
+        max-height: min(90vh, 1000px);
+      }
+    }
+
+    .intro-splash__frame video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+
+    .intro-splash--out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .intro-splash--flash {
+      animation: introFlash 0.75s ease forwards;
+    }
+
+    @keyframes introFlash {
+      0% { opacity: 1; background: #000; }
+      35% { opacity: 1; background: #fff; }
+      100% { opacity: 0; background: #030712; }
+    }
+
+    .site-content--hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .site-content--visible {
+      opacity: 1;
+      transition: opacity 0.8s ease 0.15s;
+    }
+
+    .prize-winner-frame {
+      position: relative;
+      width: 100%;
+      min-height: 18rem;
+      max-height: 28rem;
+      aspect-ratio: 992 / 1040;
+      margin: 0 auto;
+      overflow: hidden;
+      background: linear-gradient(180deg, #041a0f 0%, #030a1a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .prize-winner-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center center;
+      display: block;
+    }
+
+    .prize-winner-caption-bg {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 5.5rem;
+      background: linear-gradient(to top, rgba(3, 10, 26, 0.95) 0%, rgba(3, 10, 26, 0.55) 55%, transparent 100%);
+      z-index: 10;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="bg-[#030712] text-gray-100 min-h-screen font-sans selection:bg-amber-400/50">
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, useRef } = React;
+
+    // ─── DATA & STATIONS ──────────────────────────────────────
+    const PLAYERS = [
+      { 
+        id: 1, name: "Kylian Mbappé", short: "MBAPPÉ", pos: "ST", nat: "FRANCE", rating: 97, pac: 99, sho: 95, pas: 86, dri: 97, def: 43, phy: 85, tier: "TOTY", cat: "striker",
+        imageUrl: "https://cdn.futbin.com/content/fifa24/img/players/231747.png",
+        flagUrl: "https://flagcdn.com/w40/fr.png",
+        clubUrl: "https://upload.wikimedia.org/wikipedia/en/5/56/Real_Madrid_CF.svg"
+      },
+      { 
+        id: 2, name: "Erling Haaland", short: "HAALAND", pos: "ST", nat: "NORWAY", rating: 97, pac: 89, sho: 98, pas: 65, dri: 80, def: 45, phy: 88, tier: "TOTY", cat: "striker",
+        imageUrl: "https://cdn.futbin.com/content/fifa24/img/players/239085.png",
+        flagUrl: "https://flagcdn.com/w40/no.png",
+        clubUrl: "https://upload.wikimedia.org/wikipedia/en/e/eb/Manchester_City_FC_badge.svg"
+      },
+      { 
+        id: 3, name: "Vinícius Jr.", short: "VINÍCIUS JR.", pos: "LW", nat: "BRAZIL", rating: 97, pac: 99, sho: 91, pas: 90, dri: 98, def: 38, phy: 78, tier: "TOTY", cat: "winger",
+        imageUrl: "https://cdn.futbin.com/content/fifa24/img/players/238794.png",
+        flagUrl: "https://flagcdn.com/w40/br.png",
+        clubUrl: "https://upload.wikimedia.org/wikipedia/en/5/56/Real_Madrid_CF.svg"
+      },
+      { 
+        id: 4, name: "Lionel Messi", short: "MESSI", pos: "RW", nat: "ARGENTINA", rating: 91, pac: 75, sho: 87, pas: 92, dri: 95, def: 38, phy: 65, tier: "ICN", cat: "winger",
+        imageUrl: "https://cdn.futbin.com/content/fifa24/img/players/158023.png",
+        flagUrl: "https://flagcdn.com/w40/ar.png",
+        clubUrl: "https://upload.wikimedia.org/wikipedia/en/0/0c/Inter_Miami_CF_logo.svg"
+      },
+      { 
+        id: 5, name: "Mohamed Salah", short: "SALAH", pos: "RW", nat: "EGYPT", rating: 91, pac: 96, sho: 94, pas: 91, dri: 96, def: 57, phy: 84, tier: "TOTY", cat: "winger",
+        imageUrl: "https://cdn.futbin.com/content/fifa24/img/players/209331.png",
+        flagUrl: "https://flagcdn.com/w40/eg.png",
+        clubUrl: "https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg"
+      },
+      { 
+        id: 7, name: "Cristiano Ronaldo", short: "RONALDO", pos: "ST", nat: "PORTUGAL", rating: 92, pac: 85, sho: 93, pas: 81, dri: 84, def: 39, phy: 78, tier: "ICN", cat: "striker",
+        imageUrl: "https://cdn.futbin.com/content/fifa24/img/players/20801.png",
+        flagUrl: "https://flagcdn.com/w40/pt.png",
+        clubUrl: "https://upload.wikimedia.org/wikipedia/en/3/3c/Al-Nassr_FC.svg"
+      },
+      { 
+        id: 8, name: "Lamine Yamal", short: "YAMAL", pos: "RW", nat: "SPAIN", rating: 94, pac: 93, sho: 87, pas: 89, dri: 94, def: 34, phy: 68, tier: "TOTY", cat: "winger",
+        imageUrl: "https://cdn.futbin.com/content/fifa25/img/players/277643.png",
+        flagUrl: "https://flagcdn.com/w40/es.png",
+        clubUrl: "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg"
+      },
+      { 
+        id: 10, name: "Harry Kane", short: "KANE", pos: "ST", nat: "ENGLAND", rating: 91, pac: 72, sho: 94, pas: 84, dri: 83, def: 49, phy: 83, tier: "GOLD", cat: "striker",
+        imageUrl: "https://cdn.futbin.com/content/fifa24/img/players/202126.png",
+        flagUrl: "https://flagcdn.com/w40/gb-eng.png",
+        clubUrl: "https://upload.wikimedia.org/wikipedia/commons/1/1b/FC_Bayern_M%C3%BCnchen_logo_%282017%29.svg"
+      }
+    ];
+
+    const TIER_CONFIG = {
+      TOTY: { label: "TOTY", border: "#B3985B", glow: "rgba(179,152,91,0.5)", textAccent: "#F2E5B5", bgGradient: "linear-gradient(180deg, #0A1B3F 0%, #03081A 100%)", shieldColor: "#0F285D" },
+      ICN:  { label: "ICON", border: "#D4AF37", glow: "rgba(212,175,55,0.5)", textAccent: "#FFF5C3", bgGradient: "linear-gradient(180deg, #2A2A2A 0%, #0A0A0A 100%)", shieldColor: "#332200" },
+      GOLD: { label: "GOLD", border: "#DAA520", glow: "rgba(218,165,32,0.4)", textAccent: "#FFDF00", bgGradient: "linear-gradient(180deg, #4A3A10 0%, #1A1405 100%)", shieldColor: "#2D2200" },
+    };
+
+    const TOKEN_PACKS = [
+      { id: "bronze", name: "Bronze", tokens: 5, value: "R5", color: "#cd7f32", description: "Standard single entry into initial sweepstakes.", featured: false },
+      { id: "silver", name: "Silver", tokens: 25, value: "R25", color: "#c0c0c0", description: "Increased draw weights and match alerts stream.", featured: false },
+      { id: "gold", name: "Gold", tokens: 60, value: "R60", color: "#FBBF24", description: "Most popular choice. Complete prediction premium logs.", featured: true },
+      { id: "platinum", name: "Platinum", tokens: 150, value: "R150", color: "#e5e4e2", description: "Ultimate access ticket to the VIP finals sweepstakes.", featured: false }
+    ];
+
+    const SPONSORS = [
+      { id: "adidas", name: "Adidas", logo: "/sponsors/adidas.svg" },
+      { id: "cocacola", name: "Coca-Cola", logo: "/sponsors/cocacola.svg" },
+      { id: "visa", name: "Visa", logo: "/sponsors/visa.svg" },
+      { id: "hyundai", name: "Hyundai", logo: "/sponsors/hyundai.svg" },
+      { id: "qatar", name: "Qatar Airways", logo: "/sponsors/qatar.svg" },
+      { id: "lenovo", name: "Lenovo", logo: "/sponsors/lenovo.svg" },
+      { id: "mcdonalds", name: "McDonald's", logo: "/sponsors/mcdonalds.svg" },
+      { id: "puma", name: "Puma", logo: "/sponsors/puma.svg" },
+      { id: "nike", name: "Nike", logo: "/sponsors/nike.svg" },
+      { id: "budweiser", name: "Budweiser", logo: "/sponsors/budweiser.svg" },
+      { id: "byjus", name: "BYJU'S", logo: "/sponsors/byjus.svg" },
+      { id: "hisense", name: "Hisense", logo: "/sponsors/hisense.svg" },
+      { id: "vivo", name: "Vivo", logo: "/sponsors/vivo.svg" },
+      { id: "fifa", name: "FIFA+", logo: "/sponsors/fifa.svg" },
+      { id: "verizon", name: "Verizon", logo: "/sponsors/verizon.svg" }
+    ];
+
+    const SVGIcons = {
+      Home: () => (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+      ),
+      News: () => (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" /></svg>
+      ),
+      Leaderboard: () => (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      ),
+      User: () => (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+      ),
+      Lock: () => (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+      ),
+      Email: () => (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+      ),
+      Close: () => (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+      ),
+      Check: () => (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
+      ),
+      ArrowRight: () => (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+      ),
+      Prediction: () => (
+        <svg className="w-10 h-10 text-amber-400" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+      ),
+      Teams: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+      ),
+      Players: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+      ),
+      Fixtures: () => (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+      ),
+      Stake: () => (
+        <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      ),
+      Rewards: () => (
+        <svg fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V6a4 4 0 00-4-4H8.5M12 8h3.5a2.5 2.5 0 010 5H12m0 0v5m0-5H8.5a2.5 2.5 0 000 5H12" /></svg>
+      )
+    };
+
+    const NAV_LINKS = [
+      { id: "home", label: "Home", icon: "Home", section: "hero" },
+      { id: "players", label: "Players", icon: "Players", section: "featured-players" },
+      { id: "stake", label: "Stake", icon: "Stake", section: "tokens" }
+    ];
+
+    const FIREBASE_PLACEHOLDER = "YOUR_API_KEY";
+    const firebaseReady = typeof firebase !== "undefined"
+      && window.FIREBASE_CONFIG
+      && window.FIREBASE_CONFIG.apiKey
+      && window.FIREBASE_CONFIG.apiKey !== FIREBASE_PLACEHOLDER;
+
+    let firebaseAuth = null;
+    let firebaseDb = null;
+    let firebaseFunctions = null;
+
+    if (firebaseReady) {
+      firebase.initializeApp(window.FIREBASE_CONFIG);
+      firebaseAuth = firebase.auth();
+      firebaseDb = firebase.firestore();
+      firebaseFunctions = firebase.app().functions("us-central1");
+    }
+
+    const stripeReady = window.STRIPE_CONFIG
+      && window.STRIPE_CONFIG.publishableKey
+      && window.STRIPE_CONFIG.publishableKey !== "pk_test_YOUR_PUBLISHABLE_KEY";
+
+    const mapAuthError = (error) => {
+      const code = error?.code || "";
+      const messages = {
+        "auth/email-already-in-use": "That email is already registered. Try logging in instead.",
+        "auth/invalid-email": "Please enter a valid email address.",
+        "auth/weak-password": "Password must be at least 6 characters.",
+        "auth/user-not-found": "No account found with that email.",
+        "auth/wrong-password": "Incorrect password. Please try again.",
+        "auth/invalid-credential": "Invalid email or password.",
+        "auth/too-many-requests": "Too many attempts. Wait a moment and try again.",
+        "auth/popup-closed-by-user": "Google sign-in was cancelled.",
+        "auth/popup-blocked": "Pop-up blocked. Allow pop-ups for this site and retry.",
+        "auth/account-exists-with-different-credential": "This email is linked to another sign-in method.",
+      };
+      return messages[code] || error?.message || "Authentication failed. Please try again.";
+    };
+
+    async function loadUserProfile(uid) {
+      if (!firebaseDb) return null;
+      const snap = await firebaseDb.collection("users").doc(uid).get();
+      return snap.exists ? snap.data() : null;
+    }
+
+    async function ensureUserProfile(firebaseUser, username = null) {
+      if (!firebaseDb) return null;
+      const ref = firebaseDb.collection("users").doc(firebaseUser.uid);
+      const snap = await ref.get();
+
+      if (!snap.exists) {
+        const profile = {
+          email: firebaseUser.email,
+          username: username
+            || firebaseUser.displayName
+            || (firebaseUser.email ? firebaseUser.email.split("@")[0].toUpperCase() : "CONTESTANT"),
+          photoURL: firebaseUser.photoURL || null,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          provider: username ? "password" : (firebaseUser.providerData[0]?.providerId || "google.com"),
+          tokens: 0,
+          selectedPlayerId: null,
+        };
+        await ref.set(profile);
+        return profile;
+      }
+
+      return snap.data();
+    }
+
+    function App() {
+      const [filter, setFilter] = useState("all");
+      const [selectedPlayer, setSelectedPlayer] = useState(PLAYERS[0]);
+      const [toast, setToast] = useState(null);
+      const [scrolled, setScrolled] = useState(false);
+      const [activeNav, setActiveNav] = useState("home");
+      const [showIntro, setShowIntro] = useState(true);
+      const [introExiting, setIntroExiting] = useState(false);
+      const [siteVisible, setSiteVisible] = useState(false);
+      const [introSoundOn, setIntroSoundOn] = useState(false);
+      const [simulationFocus, setSimulationFocus] = useState(false);
+      const [lastRoundGoals, setLastRoundGoals] = useState(0);
+      const introVideoRef = useRef(null);
+
+      // Auth Options
+      const [currentUser, setCurrentUser] = useState(null);
+      const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+      const [authMode, setAuthMode] = useState("login");
+      
+      const [authEmail, setAuthEmail] = useState("");
+      const [authPassword, setAuthPassword] = useState("");
+      const [authUsername, setAuthUsername] = useState("");
+      const [authError, setAuthError] = useState("");
+      const [authSuccess, setAuthSuccess] = useState("");
+      const [authLoading, setAuthLoading] = useState(firebaseReady);
+      const [authSubmitting, setAuthSubmitting] = useState(false);
+      const [showResendVerification, setShowResendVerification] = useState(false);
+      const [purchasingPackId, setPurchasingPackId] = useState(null);
+
+      const emailVerificationSettings = {
+        url: window.location.origin,
+        handleCodeInApp: false,
+      };
+
+      // Live Simulator State
+      const [currentStage, setCurrentStage] = useState(0); 
+      const [playerScores, setPlayerScores] = useState(
+        () => Object.fromEntries(PLAYERS.map(p => [p.short, 0]))
+      );
+
+      // Simple Countdown logic
+      const [timeLeft, setTimeLeft] = useState({ d: "000", h: "00", m: "00", s: "00" });
+
+      const dismissIntro = useCallback(() => {
+        if (introExiting) return;
+        setIntroExiting(true);
+        setTimeout(() => {
+          setShowIntro(false);
+          setSiteVisible(true);
+          document.body.style.overflow = "";
+        }, 750);
+      }, [introExiting]);
+
+      const enableIntroSound = useCallback(() => {
+        const video = introVideoRef.current;
+        if (!video) return;
+        video.muted = false;
+        video.volume = 1;
+        video.play().catch(() => {});
+        setIntroSoundOn(true);
+      }, []);
+
+      useEffect(() => {
+        setShowIntro(true);
+        setSiteVisible(false);
+        setIntroExiting(false);
+        setIntroSoundOn(false);
+
+        const handlePageShow = (event) => {
+          if (event.persisted) {
+            setShowIntro(true);
+            setSiteVisible(false);
+            setIntroExiting(false);
+            setIntroSoundOn(false);
+          }
+        };
+        window.addEventListener("pageshow", handlePageShow);
+        return () => window.removeEventListener("pageshow", handlePageShow);
+      }, []);
+
+      useEffect(() => {
+        document.body.style.overflow = showIntro ? "hidden" : "";
+        return () => { document.body.style.overflow = ""; };
+      }, [showIntro]);
+
+      const handleNavClick = useCallback((item) => {
+        setActiveNav(item.id);
+        const el = document.getElementById(item.section);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        else window.scrollTo({ top: 0, behavior: "smooth" });
+      }, []);
+
+      useEffect(() => {
+        const handleScroll = () => {
+          setScrolled(window.scrollY > 50);
+
+          const scrollPos = window.scrollY + 120;
+          for (let i = NAV_LINKS.length - 1; i >= 0; i--) {
+            const section = document.getElementById(NAV_LINKS[i].section);
+            if (section && section.offsetTop <= scrollPos) {
+              setActiveNav(NAV_LINKS[i].id);
+              break;
+            }
+          }
+        };
+        window.addEventListener("scroll", handleScroll);
+        
+        const targetDate = new Date("2026-06-11T18:00:00Z");
+        const calcTime = () => {
+          const diff = Math.max(0, targetDate - Date.now());
+          setTimeLeft({
+            d: String(Math.floor(diff / 86400000)).padStart(3, "0"),
+            h: String(Math.floor((diff % 86400000) / 3600000)).padStart(2, "0"),
+            m: String(Math.floor((diff % 3600000) / 60000)).padStart(2, "0"),
+            s: String(Math.floor((diff % 60000) / 1000)).padStart(2, "0"),
+          });
+        };
+        calcTime();
+        const tid = setInterval(calcTime, 1000);
+
+        return () => {
+          window.removeEventListener("scroll", handleScroll);
+          clearInterval(tid);
+        };
+      }, []);
+
+      const showToast = useCallback((msg, type = "success") => {
+        setToast({ msg, type });
+        setTimeout(() => setToast(null), 3500);
+      }, []);
+
+      const closeAuthModal = useCallback(() => {
+        setIsAuthModalOpen(false);
+        setAuthError("");
+        setAuthSuccess("");
+        setAuthEmail("");
+        setAuthPassword("");
+        setAuthUsername("");
+        setShowResendVerification(false);
+      }, []);
+
+      const setUserFromFirebase = useCallback(async (firebaseUser) => {
+        if (!firebaseUser) {
+          setCurrentUser(null);
+          return;
+        }
+        const profile = await loadUserProfile(firebaseUser.uid);
+        setCurrentUser({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          username: profile?.username
+            || firebaseUser.displayName
+            || (firebaseUser.email ? firebaseUser.email.split("@")[0].toUpperCase() : "CONTESTANT"),
+          photoURL: profile?.photoURL || firebaseUser.photoURL || null,
+          tokens: profile?.tokens ?? 0,
+          emailVerified: firebaseUser.emailVerified,
+        });
+      }, []);
+
+      useEffect(() => {
+        if (!firebaseAuth) {
+          setAuthLoading(false);
+          return;
+        }
+
+        const unsubscribe = firebaseAuth.onAuthStateChanged(async (firebaseUser) => {
+          try {
+            await setUserFromFirebase(firebaseUser);
+          } finally {
+            setAuthLoading(false);
+          }
+        });
+
+        return () => unsubscribe();
+      }, [setUserFromFirebase]);
+
+      useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const paymentStatus = params.get("payment");
+        const packId = params.get("pack");
+
+        if (!paymentStatus) return;
+
+        if (paymentStatus === "success") {
+          const pack = TOKEN_PACKS.find((item) => item.id === packId);
+          showToast(
+            pack
+              ? `${pack.name} pack payment received. Tokens will appear shortly.`
+              : "Payment successful. Your tokens will appear shortly.",
+            "success"
+          );
+          if (firebaseAuth?.currentUser) {
+            firebaseAuth.currentUser.reload().then(() => setUserFromFirebase(firebaseAuth.currentUser));
+          }
+        } else if (paymentStatus === "cancelled") {
+          showToast("Payment cancelled. No tokens were charged.", "info");
+        }
+
+        params.delete("payment");
+        params.delete("pack");
+        params.delete("session_id");
+        const remaining = params.toString();
+        const nextUrl = `${window.location.pathname}${remaining ? `?${remaining}` : ""}${window.location.hash}`;
+        window.history.replaceState({}, "", nextUrl);
+      }, [setUserFromFirebase, showToast]);
+
+      const handlePurchasePack = async (pack) => {
+        if (!currentUser) {
+          showToast("Please log in to purchase coin packages.", "info");
+          setIsAuthModalOpen(true);
+          return;
+        }
+
+        if (!firebaseFunctions) {
+          showToast("Payments are not configured yet. Deploy Firebase Functions first.", "info");
+          return;
+        }
+
+        if (currentUser.emailVerified === false) {
+          showToast("Verify your email before purchasing token packs.", "info");
+          setAuthMode("login");
+          setIsAuthModalOpen(true);
+          return;
+        }
+
+        setPurchasingPackId(pack.id);
+        try {
+          const createCheckoutSession = firebaseFunctions.httpsCallable("createCheckoutSession");
+          const result = await createCheckoutSession({
+            packId: pack.id,
+            origin: window.location.origin,
+          });
+
+          if (!result?.data?.url) {
+            throw new Error("Stripe checkout URL was not returned.");
+          }
+
+          window.location.href = result.data.url;
+        } catch (error) {
+          const message = error?.message || "Could not start checkout. Try again.";
+          showToast(message, "info");
+        } finally {
+          setPurchasingPackId(null);
+        }
+      };
+
+      const handleEmailSignUp = async (e) => {
+        e.preventDefault();
+        setAuthError("");
+        setAuthSuccess("");
+
+        if (!firebaseAuth) {
+          setAuthError("Firebase is not configured yet. Add your keys to public/firebase-config.js.");
+          return;
+        }
+
+        if (!authEmail || !authPassword || !authUsername) {
+          setAuthError("All fields are required to create a GoalKing profile.");
+          return;
+        }
+
+        if (authPassword.length < 6) {
+          setAuthError("Password must be at least 6 characters.");
+          return;
+        }
+
+        setAuthSubmitting(true);
+        setShowResendVerification(false);
+        try {
+          const credential = await firebaseAuth.createUserWithEmailAndPassword(authEmail, authPassword);
+          await ensureUserProfile(credential.user, authUsername.trim().toUpperCase());
+          await credential.user.sendEmailVerification(emailVerificationSettings);
+          await firebaseAuth.signOut();
+          setAuthMode("login");
+          setAuthPassword("");
+          setAuthUsername("");
+          setAuthSuccess(`Confirmation email sent to ${authEmail}. Open the link in your inbox, then log in.`);
+          showToast("Check your inbox to verify your email.", "info");
+        } catch (error) {
+          setAuthError(mapAuthError(error));
+        } finally {
+          setAuthSubmitting(false);
+        }
+      };
+
+      const handleEmailLogIn = async (e) => {
+        e.preventDefault();
+        setAuthError("");
+        setAuthSuccess("");
+
+        if (!firebaseAuth) {
+          setAuthError("Firebase is not configured yet. Add your keys to public/firebase-config.js.");
+          return;
+        }
+
+        if (!authEmail || !authPassword) {
+          setAuthError("Please input your registered email address and password.");
+          return;
+        }
+
+        setAuthSubmitting(true);
+        setShowResendVerification(false);
+        try {
+          const credential = await firebaseAuth.signInWithEmailAndPassword(authEmail, authPassword);
+          await credential.user.reload();
+          const isPasswordAccount = credential.user.providerData.some((p) => p.providerId === "password");
+
+          if (isPasswordAccount && !credential.user.emailVerified) {
+            await firebaseAuth.signOut();
+            setAuthError(`Please verify your email first. We sent a confirmation link to ${authEmail}.`);
+            setShowResendVerification(true);
+            return;
+          }
+
+          const profile = await loadUserProfile(credential.user.uid);
+          await setUserFromFirebase(credential.user);
+          const displayName = profile?.username || authEmail.split("@")[0].toUpperCase();
+          setAuthSuccess("Login successful! Welcome back.");
+          showToast(`Logged in as ${displayName}`);
+          setTimeout(closeAuthModal, 1200);
+        } catch (error) {
+          setAuthError(mapAuthError(error));
+        } finally {
+          setAuthSubmitting(false);
+        }
+      };
+
+      const handleResendVerification = async () => {
+        setAuthError("");
+        setAuthSuccess("");
+
+        if (!firebaseAuth) {
+          setAuthError("Firebase is not configured yet. Add your keys to public/firebase-config.js.");
+          return;
+        }
+
+        if (!authEmail || !authPassword) {
+          setAuthError("Enter your email and password above, then resend the verification email.");
+          return;
+        }
+
+        setAuthSubmitting(true);
+        try {
+          const credential = await firebaseAuth.signInWithEmailAndPassword(authEmail, authPassword);
+          await credential.user.reload();
+
+          if (credential.user.emailVerified) {
+            const profile = await loadUserProfile(credential.user.uid);
+            await setUserFromFirebase(credential.user);
+            setShowResendVerification(false);
+            setAuthSuccess("Your email is already verified. You're logged in!");
+            showToast(`Welcome back, ${profile?.username || authEmail.split("@")[0].toUpperCase()}!`);
+            setTimeout(closeAuthModal, 1200);
+            return;
+          }
+
+          await credential.user.sendEmailVerification(emailVerificationSettings);
+          await firebaseAuth.signOut();
+          setAuthSuccess(`Verification email resent to ${authEmail}. Check your inbox and spam folder.`);
+          showToast("Verification email sent again.", "info");
+        } catch (error) {
+          setAuthError(mapAuthError(error));
+        } finally {
+          setAuthSubmitting(false);
+        }
+      };
+
+      const handleGoogleSignIn = async () => {
+        setAuthError("");
+        setAuthSuccess("");
+
+        if (!firebaseAuth) {
+          setAuthError("Firebase is not configured yet. Add your keys to public/firebase-config.js.");
+          return;
+        }
+
+        setAuthSubmitting(true);
+        try {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          const credential = await firebaseAuth.signInWithPopup(provider);
+          const profile = await ensureUserProfile(credential.user);
+          await setUserFromFirebase(credential.user);
+          setAuthSuccess("Signed in with Google.");
+          showToast(`Welcome, ${profile?.username || credential.user.displayName}!`);
+          setTimeout(closeAuthModal, 1200);
+        } catch (error) {
+          setAuthError(mapAuthError(error));
+        } finally {
+          setAuthSubmitting(false);
+        }
+      };
+
+      const handleSignOut = async () => {
+        try {
+          if (firebaseAuth) {
+            await firebaseAuth.signOut();
+          } else {
+            setCurrentUser(null);
+          }
+          showToast("Signed out of your GoalKing profile.", "info");
+        } catch (error) {
+          showToast(mapAuthError(error), "info");
+        }
+      };
+
+      const startPlayerSimulation = useCallback(() => {
+        if (!selectedPlayer) {
+          showToast("Select a golden boot pick first.", "info");
+          return;
+        }
+        setSimulationFocus(true);
+        setTimeout(() => {
+          document.getElementById("leaderboard-tracker")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 50);
+        showToast(`Simulating tournament path for ${selectedPlayer.name}…`, "info");
+      }, [selectedPlayer, showToast]);
+
+      const advanceTournamentStage = () => {
+        if (currentStage >= 4) {
+          showToast("Tournament is finished! Gold boot champion declared.", "info");
+          return;
+        }
+
+        const nextStageIndex = currentStage + 1;
+        const roundNames = ["Group Stage", "Round of 16", "Quarter-Finals", "Semi-Finals", "Final"];
+        let backedGoalsAdded = 0;
+        
+        setPlayerScores(prev => {
+          const updated = { ...prev };
+          Object.keys(updated).forEach(pName => {
+            const playerObj = PLAYERS.find(p => p.short === pName);
+            const isBacked = selectedPlayer && pName === selectedPlayer.short;
+            const bias = playerObj ? (playerObj.rating - 80) / 4 : 2;
+            let goalsAdded = Math.max(0, Math.floor(Math.random() * 3) + Math.floor(bias * 0.45));
+            if (isBacked) {
+              goalsAdded += Math.floor(Math.random() * 2) + 1;
+              backedGoalsAdded = goalsAdded;
+            }
+            if (!simulationFocus) {
+              updated[pName] += goalsAdded;
+            } else if (isBacked) {
+              updated[pName] += goalsAdded;
+            }
+          });
+          return updated;
+        });
+
+        if (simulationFocus && selectedPlayer) {
+          setLastRoundGoals(backedGoalsAdded);
+        }
+
+        setCurrentStage(nextStageIndex);
+        if (simulationFocus && selectedPlayer) {
+          showToast(`${selectedPlayer.short} scored +${backedGoalsAdded} goals in ${roundNames[nextStageIndex]}!`);
+        } else {
+          showToast(`Simulation completed for: ${roundNames[nextStageIndex]}`);
+        }
+      };
+
+      const resetTournamentSimulation = () => {
+        setPlayerScores(Object.fromEntries(PLAYERS.map(p => [p.short, 0])));
+        setCurrentStage(0);
+        setLastRoundGoals(0);
+        showToast("Leaderboard standings reset to opening group matches.", "info");
+      };
+
+      const filteredPlayers = filter === "all" ? PLAYERS : PLAYERS.filter(p => p.cat === filter);
+
+      const sortedScoreboard = Object.entries(playerScores)
+        .map(([name, goals]) => {
+          const pData = PLAYERS.find(p => p.short === name);
+          return { name, goals, flag: pData?.flagUrl || "", rating: pData?.rating || 90 };
+        })
+        .sort((a, b) => b.goals - a.goals);
+
+      return (
+        <>
+          {showIntro && (
+            <div className={`intro-splash ${introExiting ? "intro-splash--out intro-splash--flash" : ""}`}>
+              <div className="intro-splash__frame">
+                <video
+                  ref={introVideoRef}
+                  key="goalking-intro"
+                  src="/goalking.mp4"
+                  autoPlay
+                  muted
+                  playsInline
+                  onEnded={dismissIntro}
+                  onError={dismissIntro}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
+                {!introSoundOn && (
+                  <button
+                    type="button"
+                    onClick={enableIntroSound}
+                    className="intro-sound-btn"
+                  >
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    Tap for Sound
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={dismissIntro}
+                className="absolute bottom-6 right-6 sm:bottom-8 sm:right-8 z-10 px-5 py-2.5 rounded-full border border-white/25 bg-black/50 text-[10px] font-black uppercase tracking-widest text-white hover:border-amber-400 hover:text-amber-400 transition-all cursor-pointer"
+              >
+                Skip Intro
+              </button>
+            </div>
+          )}
+
+        <div className={`bg-[#030712] text-gray-100 min-h-screen selection:bg-amber-400/50 font-sans flex flex-col relative overflow-x-hidden ${siteVisible ? "site-content--visible" : "site-content--hidden"}`}>
+          {/* Toast Notification Stream */}
+          {toast && (
+            <div className="fixed top-24 right-6 z-[999] max-w-sm w-full animate-bounce pointer-events-auto">
+              <div className="bg-[#030a1a] p-4 rounded-xl flex items-center gap-4 shadow-[0_15px_30px_rgba(0,0,0,0.8)] border border-amber-400/30">
+                <div className="w-8 h-8 rounded-full bg-amber-400/20 flex items-center justify-center shrink-0">
+                  <span className="text-amber-400 font-bold">GK</span>
+                </div>
+                <span className="text-xs uppercase tracking-wider font-bold text-gray-200">{toast.msg}</span>
+              </div>
+            </div>
+          )}
+
+          {/* ─── EMAIL AUTHORIZATION MODAL ────────────────────── */}
+          {isAuthModalOpen && (
+            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+              <div className="glass-panel-gold w-full max-w-md rounded-2xl overflow-hidden relative">
+                
+                {/* Header */}
+                <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#041326]/85">
+                  <h3 className="font-bebas text-3xl tracking-wider text-white">
+                    {authMode === "login" ? "SIGN IN TO " : "CREATE YOUR "}
+                    <span className="text-neon-gold">GOALKING PROFILE</span>
+                  </h3>
+                  <button 
+                    onClick={closeAuthModal}
+                    className="text-gray-400 hover:text-white transition-all cursor-pointer bg-transparent border-0"
+                  >
+                    <SVGIcons.Close />
+                  </button>
+                </div>
+
+                {/* Form Body */}
+                <form onSubmit={authMode === "login" ? handleEmailLogIn : handleEmailSignUp} className="p-6 space-y-5 bg-[#030712]/95">
+                  {authError && (
+                    <div className="p-3 bg-red-950/50 border border-red-500/30 rounded-lg text-xs text-red-200 font-medium">
+                      {authError}
+                    </div>
+                  )}
+                  {authSuccess && (
+                    <div className="p-3 bg-emerald-950/50 border border-emerald-500/30 rounded-lg text-xs text-emerald-200 font-medium">
+                      {authSuccess}
+                    </div>
+                  )}
+
+                  {showResendVerification && authMode === "login" && (
+                    <div className="p-3 bg-amber-950/40 border border-amber-500/30 rounded-lg text-xs text-amber-100">
+                      <p className="mb-3">Didn't get the email? Check spam, or resend the confirmation link.</p>
+                      <button
+                        type="button"
+                        onClick={handleResendVerification}
+                        disabled={authSubmitting || authLoading}
+                        className="w-full py-2.5 rounded-lg border border-amber-400/40 text-amber-300 font-bold text-[11px] uppercase tracking-widest hover:bg-amber-400/10 transition-all disabled:opacity-60 disabled:cursor-not-allowed bg-transparent cursor-pointer"
+                      >
+                        Resend confirmation email
+                      </button>
+                    </div>
+                  )}
+
+                  {authMode === "signup" && (
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Username / Contestant Name</label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-3 text-gray-500"><SVGIcons.User /></span>
+                        <input 
+                          type="text" 
+                          value={authUsername}
+                          onChange={(e) => setAuthUsername(e.target.value)}
+                          placeholder="e.g. STAR_STRIKER"
+                          className="w-full bg-[#050c18] border border-white/15 rounded-lg py-3 pl-11 pr-4 text-sm text-white gold-glow-border"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Email Address</label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-3.5 text-gray-500"><SVGIcons.Email /></span>
+                      <input 
+                        type="email" 
+                        value={authEmail}
+                        onChange={(e) => setAuthEmail(e.target.value)}
+                        placeholder="contestant@fifadraft.com"
+                        className="w-full bg-[#050c18] border border-white/15 rounded-lg py-3 pl-11 pr-4 text-sm text-white gold-glow-border"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Security Password</label>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-3 text-gray-500"><SVGIcons.Lock /></span>
+                      <input 
+                        type="password" 
+                        value={authPassword}
+                        onChange={(e) => setAuthPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full bg-[#050c18] border border-white/15 rounded-lg py-3 pl-11 pr-4 text-sm text-white gold-glow-border"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={authSubmitting || authLoading}
+                    className="w-full py-3.5 rounded-lg btn-gold font-bold text-sm tracking-widest cursor-pointer mt-2 border-none disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {authSubmitting
+                      ? "VERIFYING..."
+                      : authMode === "login"
+                        ? "ENTER DRAFT ROOM"
+                        : "SECURE ENTRY CARD"}
+                  </button>
+
+                  <div className="relative py-2">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-white/10" />
+                    </div>
+                    <div className="relative flex justify-center text-[10px] uppercase tracking-widest">
+                      <span className="bg-[#030712] px-3 text-gray-500">or continue with</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleGoogleSignIn}
+                    disabled={authSubmitting || authLoading}
+                    className="w-full py-3 rounded-lg border border-white/15 bg-white text-[#030712] font-bold text-sm tracking-wide flex items-center justify-center gap-3 hover:bg-gray-100 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
+                      <path fill="#EA4335" d="M12 10.2v3.6h5.1c-.2 1.2-1.6 3.5-5.1 3.5-3.1 0-5.6-2.5-5.6-5.6s2.5-5.6 5.6-5.6c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.9 3.6 14.7 2.6 12 2.6 6.9 2.6 2.7 6.8 2.7 12s4.2 9.4 9.3 9.4c5.4 0 9-3.8 9-9.1 0-.6-.1-1.1-.2-1.6H12z"/>
+                      <path fill="#34A853" d="M3.6 7.4l3 2.2C7.5 7.8 9.6 6.4 12 6.4c1.8 0 3 .8 3.7 1.5l2.5-2.4C16.9 3.6 14.7 2.6 12 2.6 8.5 2.6 5.5 4.8 4.2 8l-2.5-1.9-.1.3z"/>
+                      <path fill="#4A90E2" d="M12 21.4c2.7 0 5-0.9 6.7-2.4l-3.1-2.5c-.9.6-2 1-3.6 1-2.8 0-5.1-1.9-5.9-4.5l-3.1 2.4c1.6 3.2 4.9 5 9 5z"/>
+                      <path fill="#FBBC05" d="M21.8 12.3c0-.6-.1-1.1-.2-1.6H12v3.6h5.5c-.2 1.1-.9 2.7-2.5 3.7l3.1 2.5c1.8-1.7 3.7-4.2 3.7-8.2z"/>
+                    </svg>
+                    Continue with Google
+                  </button>
+
+                  <div className="text-center pt-4 border-t border-white/10 text-xs text-gray-400">
+                    {authMode === "login" ? (
+                      <span>
+                        New contestant?{" "}
+                        <button 
+                          type="button" 
+                        onClick={() => {
+                            setAuthMode("signup");
+                            setAuthError("");
+                            setAuthSuccess("");
+                            setShowResendVerification(false);
+                          }}
+                          className="text-amber-400 font-bold hover:underline ml-1 bg-transparent border-none cursor-pointer"
+                        >
+                          Create profile
+                        </button>
+                      </span>
+                    ) : (
+                      <span>
+                        Already registered?{" "}
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            setAuthMode("login");
+                            setAuthError("");
+                            setAuthSuccess("");
+                          }}
+                          className="text-amber-400 font-bold hover:underline ml-1 bg-transparent border-none cursor-pointer"
+                        >
+                          Log in
+                        </button>
+                      </span>
+                    )}
+                  </div>
+                </form>
+
+                <div className="p-4 bg-[#041326] text-[10px] text-gray-400 border-t border-white/5 text-center px-6">
+                  {firebaseReady
+                    ? "Profiles are secured with Firebase Auth and stored in your Firestore database."
+                    : "Add your Firebase web config to public/firebase-config.js to enable live sign-in."}
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* ─── NAVIGATION BAR (FIFA Broadcast Style) ──────────── */}
+          <nav 
+            style={{
+              background: scrolled ? "rgba(4, 19, 38, 0.95)" : "rgba(0, 0, 0, 0.75)",
+              backdropFilter: "blur(15px)"
+            }}
+            className="fixed top-0 left-0 right-0 h-20 z-50 flex items-center justify-between gap-2 px-4 sm:px-6 md:px-12 border-b border-amber-400/15 transition-all duration-300"
+          >
+            <div className="flex items-center gap-2 sm:gap-3 cursor-pointer shrink-0" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+              <img src="/logo.svg" alt="GoalKing" className="w-9 h-9 sm:w-10 sm:h-10 rounded-full shadow-[0_0_15px_rgba(244,197,66,0.25)]" />
+              <span className="font-bebas text-xl sm:text-2xl tracking-wider text-white hidden min-[400px]:inline">
+                GOAL<span className="text-amber-400">KING</span>
+                <span className="text-white/40 text-xs tracking-normal ml-1 sm:ml-2 font-sans font-medium">2026</span>
+              </span>
+            </div>
+
+            {/* Navigation pill bar — desktop & mobile */}
+            <div className="nav-mobile-wrap">
+              <div className="nav-pill-bar">
+                {NAV_LINKS.map((item) => {
+                  const Icon = SVGIcons[item.icon];
+                  const isActive = activeNav === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleNavClick(item)}
+                      className={`nav-pill-link ${isActive ? "nav-pill-link--active" : ""}`}
+                      title={item.label}
+                    >
+                      {Icon && <Icon />}
+                      <span className="hidden sm:inline">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Auth Profile Section */}
+            <div className="flex items-center gap-4">
+              {currentUser ? (
+                <div className="flex items-center gap-3">
+                  <div className="hidden sm:flex flex-col text-right">
+                    <span className="text-xs font-bold text-white uppercase tracking-wider">{currentUser.username}</span>
+                    <span className="text-[10px] text-amber-400/80 font-semibold uppercase">
+                      {currentUser.tokens ?? 0} TOKENS
+                    </span>
+                  </div>
+                  <div className="w-9 h-9 rounded-full border border-amber-400/40 bg-gradient-to-tr from-amber-400/20 to-transparent flex items-center justify-center text-xs text-amber-400 font-black">
+                    {currentUser.username.substring(0, 2).toUpperCase()}
+                  </div>
+                  <button 
+                    onClick={handleSignOut}
+                    className="text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 transition-all ml-2 bg-transparent border-0 cursor-pointer"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <button 
+                    onClick={() => {
+                      setAuthMode("login");
+                      setIsAuthModalOpen(true);
+                    }}
+                    className="text-xs uppercase tracking-widest font-bold text-white hover:text-amber-400 transition-colors cursor-pointer bg-transparent border-0"
+                  >
+                    Login
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setAuthMode("signup");
+                      setIsAuthModalOpen(true);
+                    }}
+                    className="btn-gold text-[10px] uppercase tracking-wider font-extrabold px-5 py-2.5 rounded border-0"
+                  >
+                    Join Now
+                  </button>
+                </>
+              )}
+            </div>
+          </nav>
+
+          {/* ─── HERO SECTION (World Cup 2026 Stadium) ────────── */}
+          <header id="hero" className="relative w-full min-h-screen flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 px-6 md:px-16 pt-24 pb-12 lg:pb-0 overflow-hidden z-10">
+            
+            <div className="mzansi-flag-stripe absolute top-20 left-0 right-0 z-30" />
+
+            {/* Stadium background */}
+            <div className="absolute inset-0 z-0">
+              <div className="absolute inset-0 mzansi-glow z-[6]" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#030712]/95 via-[#030712]/55 to-[#030712]/95 z-10" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#030712] via-transparent to-[#030712]/40 z-10" />
+              
+              <div className="absolute top-0 left-1/4 w-[35vw] h-[80vh] bg-[#007A4D]/10 blur-[120px] rounded-full transform -rotate-45 z-[4]" />
+              <div className="absolute top-0 right-1/4 w-[35vw] h-[80vh] bg-[#FFB612]/8 blur-[120px] rounded-full transform rotate-45 z-[4]" />
+              
+              <img 
+                src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1920&q=80" 
+                alt="FIFA World Cup 2026 stadium under floodlights" 
+                className="w-full h-full object-cover opacity-50"
+              />
+            </div>
+
+            {/* Mzansi side blends */}
+            <div className="mzansi-side-blend mzansi-side-blend--left left-0 hidden lg:block">
+              <img 
+                src="https://images.unsplash.com/photo-1575361204480-05acf6d29d54?auto=format&fit=crop&w=800&q=80" 
+                alt="South African football fans celebrating" 
+              />
+            </div>
+            <div className="mzansi-side-blend mzansi-side-blend--right right-0 hidden lg:block">
+              <img 
+                src="https://images.unsplash.com/photo-1522778119026-d79f4067bda9?auto=format&fit=crop&w=800&q=80" 
+                alt="World Cup matchday atmosphere" 
+              />
+            </div>
+
+            {/* Left Header Title Area */}
+            <div className="relative z-20 w-full lg:max-w-2xl flex flex-col items-start gap-4 pt-6 lg:pt-10">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#007A4D]/20 border border-[#007A4D]/40">
+                  <img src="https://flagcdn.com/w20/za.png" alt="South Africa" className="h-3 rounded-sm" />
+                  <span className="text-[10px] font-black text-[#FFB612] tracking-widest uppercase">Mzansi Draft Arena</span>
+                </div>
+                <span className="text-xs font-bold text-amber-400 tracking-widest uppercase">FIFA World Cup 2026™</span>
+              </div>
+              
+              <h1 className="font-bebas text-[clamp(44px,7.2vw,90px)] leading-[0.95] font-black tracking-tight text-white uppercase">
+                FROM MZANSI <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FFB612] via-white to-[#007A4D] text-neon-gold">TO THE WORLD CUP</span>
+              </h1>
+
+              <p className="text-gray-400 text-sm md:text-base leading-relaxed max-w-lg mt-2">
+                Built for South African fans. Pick your golden boot striker or winger, lock in your prediction with validation coins priced in Rands, and compete for premium World Cup 2026 prizes.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 items-center mt-6 w-full sm:w-auto">
+                <button 
+                  onClick={() => document.getElementById("featured-players")?.scrollIntoView({ behavior: "smooth" })}
+                  className="btn-gold w-full sm:w-auto text-center text-xs uppercase tracking-widest font-black px-8 py-3.5 rounded border-0"
+                >
+                  Predict Standings
+                </button>
+                <button 
+                  onClick={() => document.getElementById("prizes")?.scrollIntoView({ behavior: "smooth" })}
+                  className="w-full sm:w-auto text-center text-xs uppercase tracking-widest font-black border border-white/20 hover:border-white text-white bg-transparent px-8 py-3.5 rounded transition-all cursor-pointer"
+                >
+                  Explore Prizes
+                </button>
+              </div>
+            </div>
+
+            {/* Countdown Widget — visible on all screen sizes */}
+            <div className="relative z-20 w-full max-w-[340px] mx-auto lg:mx-0 lg:shrink-0 self-center">
+              <div className="glass-panel-gold rounded-xl p-5 sm:p-6 border border-white/10 bg-[#061226]/90">
+                <h3 className="font-bebas text-base sm:text-lg tracking-wider text-center text-gray-300 mb-3 sm:mb-4">
+                  FIFA WORLD CUP 2026™ STARTS IN
+                </h3>
+
+                <div className="grid grid-cols-4 gap-1.5 sm:gap-2 text-center">
+                  {[
+                    { label: "Days", value: timeLeft.d },
+                    { label: "Hours", value: timeLeft.h },
+                    { label: "Minutes", value: timeLeft.m },
+                    { label: "Seconds", value: timeLeft.s }
+                  ].map((unit, i) => (
+                    <div key={i} className="flex flex-col bg-white/5 rounded-lg py-2 sm:py-2.5 px-1">
+                      <span className="font-bebas text-2xl sm:text-3xl font-black text-amber-400 leading-none">{unit.value}</span>
+                      <span className="text-[8px] sm:text-[9px] uppercase font-bold text-gray-500 mt-1">{unit.label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 sm:mt-5 text-center text-[10px] text-gray-400 border-t border-white/10 pt-3 sm:pt-4">
+                  <span className="block font-bold text-white tracking-widest text-[9px] sm:text-[10px]">11 JUNE – 19 JULY 2026</span>
+                  <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mt-3">
+                    <div className="flex items-center gap-1">
+                      <img src="https://flagcdn.com/w20/ca.png" className="h-3" alt="Canada" />
+                      <span className="text-[8px] font-bold">CANADA</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <img src="https://flagcdn.com/w20/us.png" className="h-3" alt="USA" />
+                      <span className="text-[8px] font-bold">USA</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <img src="https://flagcdn.com/w20/mx.png" className="h-3" alt="Mexico" />
+                      <span className="text-[8px] font-bold">MEXICO</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center gap-1.5 mt-3 pt-3 border-t border-white/5">
+                    <img src="https://flagcdn.com/w20/za.png" className="h-3 rounded-sm" alt="South Africa" />
+                    <span className="text-[8px] font-bold text-[#FFB612] tracking-wider">CHEERING FROM MZANSI</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </header>
+
+          {/* ─── OFFICIAL CASH PRIZES & VEHICLES ────────────────── */}
+          <section id="prizes" className="py-20 relative z-20 border-t border-white/10 overflow-hidden">
+            <div className="section-stadium-bg">
+              <img
+                src="https://images.unsplash.com/photo-1575361204480-05acf6d29d54?auto=format&fit=crop&w=1920&q=80"
+                alt=""
+                style={{ opacity: 0.26 }}
+              />
+              <div className="section-stadium-overlay" />
+            </div>
+            <div className="max-w-7xl mx-auto px-6 relative z-10">
+              
+              <div className="text-center max-w-2xl mx-auto mb-16">
+                <span className="text-xs font-bold text-amber-400 tracking-widest uppercase">OFFICIAL REWARDS</span>
+                <h2 className="font-bebas text-5xl font-black text-white mt-1">SWEEPSTAKES PRIZE POOLS</h2>
+                <p className="text-xs text-gray-400 mt-2">Every verified prediction card qualifies for direct entries to win official grand sponsor prizes.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                
+                {/* Grand Cash Prize — R100,000 */}
+                <div className="bg-[#030a1a] rounded-xl border border-white/10 overflow-hidden shadow-2xl flex flex-col justify-between">
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-4 gap-3">
+                      <span className="bg-amber-400/10 border border-amber-400/30 text-[10px] font-black text-amber-400 tracking-widest uppercase px-2 py-1 rounded">
+                        GRAND CASH PRIZE
+                      </span>
+                      <span className="font-bebas text-lg text-amber-400">R100,000</span>
+                    </div>
+                    <h3 className="font-bebas text-4xl text-white uppercase tracking-wider mb-2">SOUTH AFRICA GOALKING WINNER</h3>
+                    <p className="text-xs text-gray-400 leading-relaxed font-medium">
+                      Verified sweepstakes champion receives a R100,000 cash payout via official GoalKing presentation cheque — deposited direct to the winner's nominated South African bank account.
+                    </p>
+                  </div>
+                  <div className="prize-winner-frame">
+                    <img src="/cashwinner.jpg" alt="South Africa GoalKing R100,000 cash prize winner" className="prize-winner-img" />
+                    <div className="prize-winner-caption-bg" />
+                    <div className="absolute bottom-3 left-4 right-4 z-20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                      <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">OFFICIAL R100,000 CASH WINNER</span>
+                      <span className="text-[9px] font-bold text-gray-300 uppercase tracking-wider">Pay to order of verified champion</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Vehicle Prize */}
+                <div className="bg-[#030a1a] rounded-xl border border-white/10 overflow-hidden shadow-2xl flex flex-col justify-between">
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-4 gap-3">
+                      <span className="bg-amber-400/10 border border-amber-400/30 text-[10px] font-black text-amber-400 tracking-widest uppercase px-2 py-1 rounded">
+                        VEHICLE PRIZE
+                      </span>
+                      <span className="font-bebas text-lg text-gray-400">PREMIUM HYUNDAI</span>
+                    </div>
+                    <h3 className="font-bebas text-4xl text-white uppercase tracking-wider mb-2">GOALKING CAR WINNER</h3>
+                    <p className="text-xs text-gray-400 leading-relaxed font-medium">
+                      Runner-up sweepstakes prize — a brand-new Hyundai prize vehicle with official key handover, registered and delivered to the winner's nominated address anywhere in South Africa.
+                    </p>
+                  </div>
+                  <div className="prize-winner-frame">
+                    <img src="/carwinner.jpg" alt="GoalKing Hyundai vehicle prize winner" className="prize-winner-img" />
+                    <div className="prize-winner-caption-bg" />
+                    <div className="absolute bottom-3 left-4 right-4 z-20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                      <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">OFFICIAL VEHICLE WINNER</span>
+                      <span className="text-[9px] font-bold text-gray-300 uppercase tracking-wider">Hyundai keys · verified handover</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          </section>
+
+          {/* ─── COINS & TOKENS PACKS (Realistic Spheres) ───────── */}
+          <section id="tokens" className="py-20 relative z-20">
+            <div className="max-w-7xl mx-auto px-6">
+              
+              <div className="text-center max-w-2xl mx-auto mb-16">
+                <span className="text-xs font-bold text-amber-400 tracking-widest uppercase">COIN EXCHANGE</span>
+                <h2 className="font-bebas text-5xl font-black text-white mt-1">DRAFT VALIDATION COINS</h2>
+                <p className="text-xs text-gray-400 mt-2">Choose validation coins to verify your draft prediction entries on kickoff.</p>
+                {currentUser && (
+                  <p className="text-[11px] text-amber-400/90 mt-3 font-bold uppercase tracking-widest">
+                    Your balance: {currentUser.tokens ?? 0} tokens
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                {TOKEN_PACKS.map(pk => (
+                  <div 
+                    key={pk.id}
+                    className={`bg-gradient-to-b from-[#09152b] to-[#02050c] rounded-xl p-6 flex flex-col h-full transition-all duration-300 hover:scale-[1.02] border relative overflow-hidden ${
+                      pk.featured ? 'border-amber-400 shadow-[0_15px_30px_rgba(244,197,66,0.15)]' : 'border-white/10 shadow-xl'
+                    }`}
+                  >
+                    {pk.featured && (
+                      <div className="absolute top-0 right-0 left-0 bg-amber-400 text-gray-900 text-[9px] font-black tracking-widest uppercase py-1 text-center shadow">
+                        MOST POPULAR
+                      </div>
+                    )}
+
+                    {/* Highly detailed realistic golden coin sphere in the background */}
+                    <div className="absolute right-[-10px] top-[25px] opacity-15 pointer-events-none scale-125 animated-coin-bg">
+                      <div 
+                        style={{ background: `radial-gradient(circle at 35% 30%, #FFF, ${pk.color} 50%, #000 100%)` }}
+                        className="w-24 h-24 rounded-full border border-white/20 shadow-2xl"
+                      />
+                    </div>
+
+                    <div className="flex flex-col mb-6 mt-4 relative z-10">
+                      <span className="text-[10px] font-black tracking-widest uppercase mb-1" style={{ color: pk.color }}>
+                        {pk.name.toUpperCase()} SYSTEM TIER
+                      </span>
+                      <h3 className="font-bebas text-3xl uppercase tracking-wide text-white">{pk.name} COIN PACK</h3>
+                      
+                      <div className="mt-4 flex items-baseline gap-1.5">
+                        <span className="text-3xl font-bebas text-amber-400">{pk.value}</span>
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">VALIDATION COINS</span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-gray-400 mb-6 flex-1 relative z-10 font-medium">
+                      {pk.description} Gain validation keys for premium matches.
+                    </p>
+
+                    <div className="relative z-10 pt-4 border-t border-white/10">
+                      <div className="flex justify-between text-xs font-bold text-gray-400 mb-4">
+                        <span>Total Coins:</span>
+                        <span className="text-amber-400">{pk.tokens} TOKENS</span>
+                      </div>
+                      
+                      <button 
+                        onClick={() => handlePurchasePack(pk)}
+                        disabled={purchasingPackId === pk.id}
+                        className={`w-full py-3.5 rounded text-xs uppercase tracking-widest font-black transition-all cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed ${
+                          pk.featured ? 'bg-amber-400 text-gray-950 hover:bg-amber-300' : 'bg-[#050c18] text-white border border-white/15 hover:border-white'
+                        }`}
+                      >
+                        {purchasingPackId === pk.id ? "Opening Stripe..." : "Acquire Pack"}
+                      </button>
+                    </div>
+
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          </section>
+
+          {/* ─── FEATURED DRAFT POOL (FUT Visualizations) ───────── */}
+          <section id="featured-players" className="py-20 relative z-20 border-t border-white/10 overflow-hidden">
+            <div className="section-stadium-bg">
+              <img
+                src="https://images.unsplash.com/photo-1522778119026-d79f4067bda9?auto=format&fit=crop&w=1920&q=80"
+                alt=""
+                style={{ opacity: 0.28 }}
+              />
+              <div className="section-stadium-overlay" />
+            </div>
+            <div className="max-w-7xl mx-auto px-6 relative z-10">
+              
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+                <div>
+                  <span className="text-xs font-bold text-amber-400 tracking-widest uppercase">OFFICIAL CONTENDERS</span>
+                  <h2 className="font-bebas text-5xl font-black uppercase text-white mt-1">CHOOSE YOUR GOLDEN BOOT CHAMPION</h2>
+                  <p className="text-xs text-gray-400 mt-2">Strikers and wingers only — tap a FUT card to back your golden boot pick.</p>
+                </div>
+
+                {/* Filter Controls */}
+                <div className="flex flex-wrap gap-2 bg-[#041326]/60 p-1 rounded-lg border border-white/15">
+                  {[
+                    { id: "all", label: "All Players" },
+                    { id: "striker", label: "Strikers" },
+                    { id: "winger", label: "Wingers" }
+                  ].map(b => (
+                    <button
+                      key={b.id}
+                      onClick={() => setFilter(b.id)}
+                      className="px-4 py-2 text-[10px] font-bold rounded transition-all uppercase tracking-widest cursor-pointer whitespace-nowrap border-0"
+                      style={{
+                        background: filter === b.id ? "#f4c542" : "transparent",
+                        color: filter === b.id ? "#030712" : "#9CA3AF",
+                      }}
+                    >
+                      {b.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Cards Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                {filteredPlayers.map(p => {
+                  const config = TIER_CONFIG[p.tier] || TIER_CONFIG["GOLD"];
+                  const isSelected = selectedPlayer?.id === p.id;
+                  return (
+                    <div 
+                      key={p.id}
+                      onClick={() => {
+                        setSelectedPlayer(p);
+                        if (simulationFocus) setLastRoundGoals(0);
+                        showToast(`Prediction locked to: ${p.name.toUpperCase()}`);
+                      }}
+                      className="fut-card-wrapper relative aspect-[0.7] rounded-[10%/7%] overflow-hidden cursor-pointer flex flex-col"
+                      style={{
+                        background: config.bgGradient,
+                        border: `2.5px solid ${isSelected ? '#FFF' : config.border}`,
+                        boxShadow: isSelected 
+                          ? `0 0 25px ${config.glow}, inset 0 0 20px rgba(255,255,255,0.15)`
+                          : `0 10px 25px rgba(0,0,0,0.85)`,
+                      }}
+                    >
+                      {/* Inner FUT details card borders */}
+                      <div className="absolute inset-0 opacity-25 pointer-events-none mix-blend-overlay bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
+                      <div style={{ borderColor: config.border }} className="absolute inset-1 border border-black/20 rounded-[inherit] pointer-events-none z-10" />
+
+                      {/* Breakthrough portrait cutouts */}
+                      <img 
+                        src={p.imageUrl} 
+                        alt={p.name}
+                        className="absolute top-[-4%] left-1/2 -translate-x-1/2 w-[88%] h-[68%] object-contain filter drop-shadow-[0_12px_15px_rgba(0,0,0,0.8)] pointer-events-none transition-all duration-300"
+                        style={{ zIndex: 5 }}
+                      />
+
+                      {/* Card Overlay stats on top-left */}
+                      <div className="absolute top-[8%] left-[10%] z-20 flex flex-col items-center">
+                        <span style={{ color: config.textAccent }} className="font-bebas text-[clamp(20px,3.5vw,32px)] leading-none font-black tracking-tighter">
+                          {p.rating}
+                        </span>
+                        <span className="text-[9px] font-bold text-gray-300 tracking-wider uppercase leading-none mt-1">
+                          {p.pos}
+                        </span>
+                      </div>
+
+                      {/* Card Footer Detail layout */}
+                      <div className="absolute bottom-0 left-0 right-0 h-[40%] z-20 flex flex-col items-center justify-end pb-[8%] bg-gradient-to-t from-black/95 via-black/60 to-transparent">
+                        <div className="w-[85%] text-center border-b border-white/15 pb-1 mb-2">
+                          <h3 style={{ color: config.textAccent }} className="font-bebas text-base tracking-wider whitespace-nowrap overflow-hidden text-ellipsis font-bold uppercase">
+                            {p.short}
+                          </h3>
+                        </div>
+
+                        {/* Attribute grid */}
+                        <div className="grid grid-cols-6 gap-x-[1px] w-[90%] text-center px-1">
+                          {[
+                            { stat: "PAC", val: p.pac },
+                            { stat: "SHO", val: p.sho },
+                            { stat: "PAS", val: p.pas },
+                            { stat: "DRI", val: p.dri },
+                            { stat: "DEF", val: p.def },
+                            { stat: "PHY", val: p.phy }
+                          ].map(s => (
+                            <div key={s.stat} className="flex flex-col items-center">
+                              <span style={{ color: config.textAccent }} className="font-bebas text-[11px] font-black leading-none">{s.val}</span>
+                              <span className="text-[7px] font-bold text-gray-400 tracking-tighter">{s.stat}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="flex items-center gap-2 mt-2.5 h-[14%]">
+                          <img src={p.flagUrl} alt="" className="h-full object-contain rounded-sm" />
+                          <img src={p.clubUrl} alt="" className="h-[120%] object-contain" />
+                        </div>
+                      </div>
+
+                      {/* Pick confirmation tick */}
+                      {isSelected && (
+                        <div className="absolute top-[8%] right-[8%] z-30 w-6 h-6 rounded-full bg-white border-2 border-amber-400 flex items-center justify-center shadow-lg">
+                          <span className="text-gray-900"><SVGIcons.Check /></span>
+                        </div>
+                      )}
+
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Locked in prediction block */}
+              {selectedPlayer && (
+                <div className="mt-12 bg-gradient-to-r from-[#030a1a] via-[#051326] to-[#030a1a] p-6 rounded-xl border border-amber-400/25 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3.5 bg-amber-400/10 rounded-lg border border-amber-400/20">
+                      <SVGIcons.Prediction />
+                    </div>
+                    <div>
+                      <h4 className="font-bebas text-2xl tracking-wider text-white uppercase">DRAFT PICKS COMMITTED</h4>
+                      <p className="text-xs text-gray-400">Backing <span className="text-amber-400 font-bold">{selectedPlayer.name}</span> for the 2026 Golden Boot.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <img src={selectedPlayer.flagUrl} className="w-8 rounded" alt="" />
+                    <span className="text-sm font-bold uppercase tracking-wider">{selectedPlayer.short}</span>
+                    <span className="text-xs bg-[#051833] px-3 py-1.5 rounded border border-white/10 font-bold text-amber-400">{selectedPlayer.rating} OVR</span>
+                  </div>
+
+                  <button 
+                    onClick={startPlayerSimulation}
+                    className="btn-gold text-xs px-6 py-3 rounded tracking-wider cursor-pointer font-bold border-none"
+                  >
+                    Simulate Matches
+                  </button>
+                </div>
+              )}
+
+            </div>
+          </section>
+
+          {/* ─── LIVE DRAFT SIMULATOR & BRACKETS ────────────────── */}
+          <section id="leaderboard-tracker" className="py-20 border-t border-b border-white/10 relative z-20 overflow-hidden">
+            <div className="section-stadium-bg">
+              <img
+                src="https://images.unsplash.com/photo-1540747913348-4c68865d3e47?auto=format&fit=crop&w=1920&q=80"
+                alt=""
+                style={{ opacity: 0.3 }}
+              />
+              <div className="section-stadium-overlay" style={{ background: "linear-gradient(180deg, rgba(4, 19, 38, 0.9) 0%, rgba(4, 19, 38, 0.78) 50%, rgba(4, 19, 38, 0.92) 100%)" }} />
+            </div>
+            <div className="max-w-7xl mx-auto px-6 relative z-10">
+              
+              <div className="text-center max-w-2xl mx-auto mb-12">
+                <span className="text-xs font-bold text-amber-400 tracking-widest uppercase">
+                  {simulationFocus && selectedPlayer ? "YOUR PICK SIMULATION" : "BRACKETS & TRACKER"}
+                </span>
+                <h2 className="font-bebas text-5xl font-black text-white mt-1">
+                  {simulationFocus && selectedPlayer
+                    ? `${selectedPlayer.short} GOLDEN BOOT RUN`
+                    : "2026 WORLD CUP STANDINGS SIMULATOR"}
+                </h2>
+                <p className="text-xs text-gray-400 mt-2">
+                  {simulationFocus && selectedPlayer
+                    ? `Live tournament simulation tracking only ${selectedPlayer.name}'s goal progression round by round.`
+                    : "Simulate round outcomes dynamically to watch goals update live across each major tournament tier."}
+                </p>
+                {simulationFocus && (
+                  <button
+                    onClick={() => setSimulationFocus(false)}
+                    className="mt-4 text-[10px] font-bold uppercase tracking-widest text-amber-400 border border-amber-400/30 px-4 py-2 rounded-full hover:bg-amber-400/10 transition-all cursor-pointer bg-transparent"
+                  >
+                    View Full Standings
+                  </button>
+                )}
+              </div>
+
+              {simulationFocus && selectedPlayer ? (
+                <div className="max-w-3xl mx-auto">
+                  <div className="bg-[#02050c] rounded-2xl border border-amber-400/30 overflow-hidden shadow-[0_0_40px_rgba(244,197,66,0.12)]">
+                    <div className="relative h-48 sm:h-56 bg-gradient-to-br from-[#0a1b3f] to-[#030712] flex items-end justify-center overflow-hidden">
+                      <img
+                        src={selectedPlayer.imageUrl}
+                        alt={selectedPlayer.name}
+                        className="h-[115%] object-contain drop-shadow-[0_12px_30px_rgba(0,0,0,0.8)]"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#02050c] via-transparent to-transparent" />
+                      <div className="absolute top-4 left-4 flex items-center gap-2">
+                        <img src={selectedPlayer.flagUrl} className="w-8 rounded shadow" alt="" />
+                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 bg-black/50 px-2 py-1 rounded border border-amber-400/30">YOUR PICK</span>
+                      </div>
+                    </div>
+
+                    <div className="p-6 sm:p-8">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                        <div>
+                          <h3 className="font-bebas text-3xl sm:text-4xl text-white tracking-wider uppercase">{selectedPlayer.short}</h3>
+                          <p className="text-xs text-gray-400 mt-1">{selectedPlayer.name} · {selectedPlayer.pos} · {selectedPlayer.nat}</p>
+                        </div>
+                        <div className="text-center sm:text-right">
+                          <span className="font-bebas text-5xl sm:text-6xl font-black text-amber-400 leading-none">
+                            {playerScores[selectedPlayer.short] || 0}
+                          </span>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mt-1">Total Goals</p>
+                        </div>
+                      </div>
+
+                      {lastRoundGoals > 0 && (
+                        <div className="mb-6 p-3 rounded-lg bg-emerald-950/30 border border-emerald-500/25 text-center">
+                          <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                            Last round: +{lastRoundGoals} goals
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="space-y-3 mb-8">
+                        {[
+                          { index: 0, title: "Group Stage" },
+                          { index: 1, title: "Round of 16" },
+                          { index: 2, title: "Quarter-Finals" },
+                          { index: 3, title: "Semi-Finals" },
+                          { index: 4, title: "Final Match" }
+                        ].map(stage => {
+                          const isActive = currentStage === stage.index;
+                          const isCompleted = currentStage > stage.index;
+                          return (
+                            <div
+                              key={stage.index}
+                              className={`p-3 rounded-lg border flex items-center justify-between ${
+                                isActive
+                                  ? "border-amber-400/50 bg-amber-400/5"
+                                  : isCompleted
+                                    ? "border-emerald-500/25 bg-emerald-950/15"
+                                    : "border-white/10 bg-[#050c18]"
+                              }`}
+                            >
+                              <span className="text-xs font-bold uppercase tracking-wider text-white">{stage.title}</span>
+                              {isCompleted ? (
+                                <span className="text-[10px] text-emerald-400 font-bold">DONE</span>
+                              ) : isActive ? (
+                                <span className="text-[10px] text-amber-400 font-bold animate-pulse">IN PLAY</span>
+                              ) : (
+                                <span className="text-[10px] text-gray-600 font-bold">UPCOMING</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex gap-3">
+                        <button
+                          onClick={advanceTournamentStage}
+                          disabled={currentStage >= 4}
+                          className="flex-1 btn-gold py-3.5 px-4 rounded text-xs tracking-wider cursor-pointer disabled:opacity-50 border-none font-black"
+                        >
+                          {currentStage >= 4 ? "Simulation Complete" : `Simulate ${selectedPlayer.short}'s Next Round`}
+                        </button>
+                        <button
+                          onClick={resetTournamentSimulation}
+                          className="py-3.5 px-4 rounded text-xs font-bold border border-white/15 hover:border-white bg-transparent text-white cursor-pointer"
+                        >
+                          Reset
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                {/* Simulation Brackets (Left) */}
+                <div className="lg:col-span-5 space-y-4">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Tournament Progression Stages</h3>
+                  
+                  {[
+                    { index: 0, title: "Group Stage", matches: "48 Open Matches" },
+                    { index: 1, title: "Round of 16", matches: "8 Elimination Matches" },
+                    { index: 2, title: "Quarter-Finals", matches: "Last 8 Standings Contenders" },
+                    { index: 3, title: "Semi-Finals", matches: "Final Four Arena" },
+                    { index: 4, title: "Final Match", matches: "World Cup 2026 Champion" }
+                  ].map(stage => {
+                    const isActive = currentStage === stage.index;
+                    const isCompleted = currentStage > stage.index;
+                    return (
+                      <div 
+                        key={stage.index}
+                        className={`p-4 rounded-lg border transition-all ${
+                          isActive 
+                            ? 'bg-[#030a1a] border-amber-400/50 shadow-[0_0_15px_rgba(244,197,66,0.15)]' 
+                            : isCompleted 
+                              ? 'bg-emerald-950/20 border-emerald-500/30 text-gray-400' 
+                              : 'bg-[#02050c] border-white/10 text-gray-500'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-[10px] font-bold tracking-widest uppercase block text-amber-400">STAGE {stage.index + 1}</span>
+                            <h4 className="font-bebas text-xl text-white tracking-wider uppercase mt-0.5">{stage.title}</h4>
+                          </div>
+                          {isCompleted ? (
+                            <span className="text-xs text-emerald-400 font-bold tracking-wider">COMPLETED</span>
+                          ) : isActive ? (
+                            <span className="text-xs text-amber-400 font-bold tracking-wider animate-pulse">LIVE GAMEPLAY</span>
+                          ) : (
+                            <span className="text-xs text-gray-600 font-bold tracking-wider">LOCKED</span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-gray-400 mt-1 font-medium">{stage.matches}</p>
+                      </div>
+                    );
+                  })}
+
+                  {/* Simulations controls */}
+                  <div className="pt-4 flex gap-4">
+                    <button 
+                      onClick={advanceTournamentStage}
+                      disabled={currentStage >= 4}
+                      className="flex-1 btn-gold py-3 px-4 rounded text-xs tracking-wider cursor-pointer disabled:opacity-50 border-none"
+                    >
+                      {currentStage >= 4 ? "Tournament Completed" : "Simulate Next Round"}
+                    </button>
+                    <button 
+                      onClick={resetTournamentSimulation}
+                      className="py-3 px-4 rounded text-xs font-bold border border-white/15 hover:border-white bg-transparent transition-all text-white cursor-pointer"
+                    >
+                      Reset
+                    </button>
+                  </div>
+                </div>
+
+                {/* Scoreboard (Right) */}
+                <div className="lg:col-span-7 bg-[#02050c] p-6 rounded-xl border border-white/10">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+                    <h3 className="font-bebas text-2xl tracking-wider text-white">GOAL STANDINGS</h3>
+                    <span className="text-xs bg-[#051833] px-3 py-1 rounded border border-white/10 font-bold text-amber-400">LIVE DRAFT TRACKER</span>
+                  </div>
+
+                  <div className="space-y-3 max-h-[380px] overflow-y-auto pr-2">
+                    {sortedScoreboard.map((item, idx) => {
+                      const isUserBacking = selectedPlayer?.short === item.name;
+                      return (
+                        <div 
+                          key={item.name}
+                          className={`p-3 rounded-lg flex items-center justify-between transition-all ${
+                            isUserBacking 
+                              ? 'bg-amber-400/10 border border-amber-400/35 shadow-[0_4px_12px_rgba(244,197,66,0.1)]' 
+                              : 'bg-[#050c18] border border-white/5'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm font-bold text-gray-400 w-5">{idx + 1}</span>
+                            <img src={item.flag} className="w-6 rounded shadow-sm" alt="" />
+                            <div>
+                              <span className="text-xs font-bold text-white uppercase tracking-wider block">
+                                {item.name} {isUserBacking && <span className="text-[10px] text-amber-400 font-black ml-1.5">(BACKED BY YOU)</span>}
+                              </span>
+                              <span className="text-[9px] text-gray-500 font-medium">Competitor: {item.rating} OVR rating</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-4">
+                            <span className="font-bebas text-2xl font-black text-amber-400">{item.goals} GOALS</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+              </div>
+              )}
+
+            </div>
+          </section>
+
+          {/* ─── SPONSORS MATRIX (Match references) ─────────────── */}
+          <section id="sponsors" className="py-16 relative z-20 bg-[#030712] border-t border-b border-white/10 select-none">
+            <div className="max-w-7xl mx-auto px-6">
+              
+              <div className="text-center mb-8">
+                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">OFFICIAL SUPPORT BRANDS</span>
+                <h3 className="font-bebas text-2xl tracking-wider text-amber-400 uppercase mt-1">FIFA PARTNER NETWORK</h3>
+              </div>
+
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-4 max-w-5xl mx-auto">
+                {SPONSORS.map((sponsor) => (
+                  <div key={sponsor.id} className="sponsor-card" title={sponsor.name}>
+                    <img
+                      src={sponsor.logo}
+                      alt={sponsor.name}
+                      className="sponsor-logo"
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          </section>
+
+          {/* ─── FOOTER FEATURE BAR ────────────────────────────── */}
+          <footer className="bg-[#02050c] text-white/50 border-t border-white/10 mt-auto">
+            
+            <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-6 border-b border-white/10 text-xs text-center md:text-left">
+              <div>
+                <span className="block font-bold text-white tracking-wider uppercase">PREDICT & WIN</span>
+                <p className="text-[10px] text-gray-500 mt-0.5">Secure draft verification slots for premium matches.</p>
+              </div>
+              <div>
+                <span className="block font-bold text-white tracking-wider uppercase">EXCLUSIVE REWARDS</span>
+                <p className="text-[10px] text-gray-500 mt-0.5">Cars, luxury hotel stays, and verified cash sweepstakes.</p>
+              </div>
+              <div>
+                <span className="block font-bold text-white tracking-wider uppercase">SECURE & FAIR</span>
+                <p className="text-[10px] text-gray-500 mt-0.5">100% verified prediction engines under official compliance rules.</p>
+              </div>
+              <div>
+                <span className="block font-bold text-white tracking-wider uppercase">24/7 SUPPORT</span>
+                <p className="text-[10px] text-gray-500 mt-0.5">Reach our dedicated game prediction representatives anytime.</p>
+              </div>
+            </div>
+
+            <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-widest gap-4">
+              <span>© 2026 GOALKING BRACKETS DRAFT. NOT DIRECTLY AFFILIATED WITH FIFA OR REAL FEDERATIONS.</span>
+              <div className="flex gap-6">
+                <a href="#featured-players" className="hover:text-white">TERMS OF USE</a>
+                <a href="#featured-players" className="hover:text-white">PRIVACY AUDIT</a>
+                <a href="#featured-players" className="hover:text-white">OFFICIAL RULES</a>
+              </div>
+            </div>
+
+          </footer>
+
+        </div>
+        </>
+      );
+    }
+
+    const container = document.getElementById('root');
+    const root = ReactDOM.createRoot(container);
+    root.render(<App />);
+  </script>
+</body>
+</html>

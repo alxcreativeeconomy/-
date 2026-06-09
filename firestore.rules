@@ -1,0 +1,38 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // User profiles — each contestant can read/write only their own document
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasAll(['email', 'username', 'createdAt'])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.tokens == 0;
+      allow update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.tokens == resource.data.tokens
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['username', 'photoURL', 'selectedPlayerId']);
+      allow delete: if false;
+    }
+
+    match /payments/{paymentId} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow write: if false;
+    }
+
+    // Public leaderboard (optional — enable when you add server-side writes)
+    match /leaderboard/{entryId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
