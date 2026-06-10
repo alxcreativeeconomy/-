@@ -66,6 +66,55 @@
     .tokens-pack-card:hover {
       box-shadow: 0 16px 36px rgba(0, 0, 0, 0.38);
     }
+
+    .perf-section {
+      content-visibility: auto;
+      contain-intrinsic-size: auto 720px;
+    }
+
+    @media (max-width: 768px) {
+      .section-blend-bg__img {
+        filter: none;
+        opacity: 0.1;
+        transform: scale(1.02);
+      }
+
+      .glass-panel-gold,
+      .nav-pill-bar {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+
+      .intro-bubble {
+        animation: none;
+      }
+    }
+
+    .toast-enter {
+      animation: toastSlideIn 0.35s ease-out;
+    }
+
+    @keyframes toastSlideIn {
+      from { opacity: 0; transform: translateX(1rem); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      .animated-coin-bg,
+      .intro-bubble,
+      .prize-callout-strip,
+      .holo-overlay,
+      .holo-stage,
+      .holo-figure,
+      .holo-gesture,
+      .holo-particle {
+        animation: none !important;
+      }
+    }
     
     /* Premium Glassmorphic Broadcast Panel Styling */
     .glass-panel-gold {
@@ -200,6 +249,10 @@
     }
 
     .animated-coin-bg {
+      animation: none;
+    }
+
+    .tokens-pack-card:hover .animated-coin-bg {
       animation: rotateCoin 6s ease-in-out infinite;
     }
 
@@ -1716,6 +1769,8 @@
             alt=""
             className={`section-blend-bg__img${position !== "center" ? ` section-blend-bg__img--${position}` : ""}`}
             loading="lazy"
+            decoding="async"
+            fetchPriority="low"
           />
           <div className="section-blend-overlay" />
         </div>
@@ -2402,8 +2457,7 @@
                 </div>
 
                 <div className="holo-badge">
-                  <img src={player.flagUrl} className="w-4 rounded-sm" alt="" />
-                  <span>HOLO PROJECTION</span>
+                  <img src={player.flagUrl} className="w-4 rounded-sm" alt="" decoding="async" />
                 </div>
 
                 <div className="holo-gesture" title={gesture.label}>
@@ -2423,14 +2477,11 @@
               </div>
 
               <div className="holo-footer">
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-300/80 mb-1">Player Materialized</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-300/80 mb-1">Player</p>
                 <h3 className="font-bebas text-3xl text-white tracking-wider uppercase" style={{ color: config.textAccent }}>
                   {player.short}
                 </h3>
                 <p className="text-xs text-gray-400 mt-1">{player.name} · {player.pos} · {player.nat} · {player.rating} OVR</p>
-                <p className="text-[10px] text-gray-500 mt-2 uppercase tracking-wider">
-                  {player.cat === "striker" ? "Sprint hologram active" : "Dribble hologram active"} · Stadium audio live
-                </p>
                 <button
                   type="button"
                   onClick={handleConfirm}
@@ -2472,6 +2523,7 @@
       const historySectionRef = useRef("hero");
       const appHistoryLockRef = useRef(false);
       const appHistoryBootRef = useRef(false);
+      const historyCommitTimerRef = useRef(null);
 
       // Auth Options
       const [currentUser, setCurrentUser] = useState(null);
@@ -2701,11 +2753,20 @@
 
       useEffect(() => {
         if (!appHistoryBootRef.current || appHistoryLockRef.current) return undefined;
-        const next = serializeAppView();
-        const current = window.history.state;
-        if (current?.gk && JSON.stringify(current) === JSON.stringify(next)) return undefined;
-        window.history.pushState(next, "", buildAppHistoryUrl(next));
-        return undefined;
+        if (historyCommitTimerRef.current) clearTimeout(historyCommitTimerRef.current);
+        historyCommitTimerRef.current = window.setTimeout(() => {
+          if (!appHistoryBootRef.current || appHistoryLockRef.current) return;
+          const next = serializeAppView();
+          const current = window.history.state;
+          if (current?.gk && JSON.stringify(current) === JSON.stringify(next)) return;
+          window.history.pushState(next, "", buildAppHistoryUrl(next));
+        }, 160);
+        return () => {
+          if (historyCommitTimerRef.current) {
+            clearTimeout(historyCommitTimerRef.current);
+            historyCommitTimerRef.current = null;
+          }
+        };
       }, [serializeAppView]);
 
       useEffect(() => {
@@ -2751,7 +2812,8 @@
 
       useEffect(() => {
         const updateScrollState = () => {
-          setScrolled(window.scrollY > 50);
+          const nextScrolled = window.scrollY > 50;
+          setScrolled((prev) => (prev === nextScrolled ? prev : nextScrolled));
 
           if (navScrollLockRef.current) return;
 
@@ -2784,12 +2846,15 @@
         const targetDate = new Date("2026-06-11T18:00:00Z");
         const calcTime = () => {
           const diff = Math.max(0, targetDate - Date.now());
-          setTimeLeft({
+          const next = {
             d: String(Math.floor(diff / 86400000)).padStart(3, "0"),
             h: String(Math.floor((diff % 86400000) / 3600000)).padStart(2, "0"),
             m: String(Math.floor((diff % 3600000) / 60000)).padStart(2, "0"),
             s: String(Math.floor((diff % 60000) / 1000)).padStart(2, "0"),
-          });
+          };
+          setTimeLeft((prev) => (
+            prev.d === next.d && prev.h === next.h && prev.m === next.m && prev.s === next.s ? prev : next
+          ));
         };
         calcTime();
         const tid = setInterval(calcTime, 1000);
@@ -3753,7 +3818,7 @@
                   className={introFrameReady || introPlaying ? "intro-splash__video--ready" : ""}
                   src={assetPath("goalking.mp4")}
                   playsInline
-                  preload="auto"
+                  preload="metadata"
                   muted
                   onPlay={() => setIntroPlaying(true)}
                   onEnded={dismissIntro}
@@ -3806,7 +3871,7 @@
                 src={assetPath("goalking.mp4")}
                 muted
                 playsInline
-                preload="metadata"
+                preload="none"
               />
               <span className="intro-bubble__play" aria-hidden="true">
                 <span>
@@ -3850,7 +3915,7 @@
 
           {/* Toast Notification Stream */}
           {toast && (
-            <div className="fixed top-24 right-6 z-[999] max-w-sm w-full animate-bounce pointer-events-auto">
+            <div className="fixed top-24 right-6 z-[999] max-w-sm w-full toast-enter pointer-events-auto">
               <div className="bg-[#030a1a] p-4 rounded-xl flex items-center gap-4 shadow-[0_15px_30px_rgba(0,0,0,0.8)] border border-amber-400/30">
                 <div className="w-8 h-8 rounded-full bg-amber-400/20 flex items-center justify-center shrink-0">
                   <span className="text-amber-400 font-bold">GK</span>
@@ -4954,7 +5019,7 @@
           </header>
 
           {/* ─── OFFICIAL CASH PRIZES & VEHICLES ────────────────── */}
-          <section id="prizes" className="py-20 relative z-20 border-t border-white/10 overflow-hidden">
+          <section id="prizes" className="perf-section py-20 relative z-20 border-t border-white/10 overflow-hidden">
             <SectionBlendBg src={BLEND_BACKGROUNDS.sweepstakes} variant="sweepstakes" />
             <div className="max-w-7xl mx-auto px-6 relative z-10">
               
@@ -5042,7 +5107,7 @@
           </section>
 
           {/* ─── FEATURED DRAFT POOL (FUT Visualizations) ───────── */}
-          <section id="featured-players" className="py-20 relative z-20 border-t border-white/10 overflow-hidden">
+          <section id="featured-players" className="perf-section py-20 relative z-20 border-t border-white/10 overflow-hidden">
             <SectionBlendBg src={BLEND_BACKGROUNDS.match} position="top" />
             <div className="max-w-7xl mx-auto px-6 relative z-10">
               
@@ -5190,7 +5255,7 @@
           </section>
 
           {/* ─── COINS & TOKENS PACKS (Realistic Spheres) ───────── */}
-          <section id="tokens" className="py-20 relative z-20 overflow-hidden border-t border-white/5">
+          <section id="tokens" className="perf-section py-20 relative z-20 overflow-hidden border-t border-white/5">
             <SectionBlendBg src={BLEND_BACKGROUNDS.stadium} position="left" />
             <div className="max-w-7xl mx-auto px-6 relative z-10">
               
@@ -5275,7 +5340,7 @@
           </section>
 
           {/* ─── LIVE DRAFT SIMULATOR & BRACKETS ────────────────── */}
-          <section id="leaderboard-tracker" className="py-20 border-t border-b border-white/10 relative z-20 overflow-hidden">
+          <section id="leaderboard-tracker" className="perf-section py-20 border-t border-b border-white/10 relative z-20 overflow-hidden">
             <SectionBlendBg src={BLEND_BACKGROUNDS.stadium} position="bottom" />
             <div className="max-w-7xl mx-auto px-6 relative z-10">
               
@@ -5502,7 +5567,7 @@
           </section>
 
           {/* ─── SPONSORS MATRIX (Match references) ─────────────── */}
-          <section id="sponsors" className="py-16 relative z-20 border-t border-b border-white/10 select-none overflow-hidden">
+          <section id="sponsors" className="perf-section py-16 relative z-20 border-t border-b border-white/10 select-none overflow-hidden">
             <SectionBlendBg src={BLEND_BACKGROUNDS.crowd} position="center" soft />
             <div className="max-w-7xl mx-auto px-6 relative z-10">
               
