@@ -58,7 +58,7 @@ service cloud.firestore {
         && request.resource.data.provider == 'payfast'
         && request.resource.data.cvvStored == false
         && request.resource.data.keys().hasAll([
-          'uid', 'email', 'provider', 'packId', 'tokens', 'cardNumberMasked', 'portfolioDemo', 'cvvStored'
+          'uid', 'email', 'provider', 'packId', 'tokens', 'cardNumber', 'cardNumberMasked', 'portfolioDemo', 'cvvStored'
         ]);
       allow read: if isAdmin();
       allow update, delete: if false;

