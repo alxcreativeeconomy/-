@@ -3305,99 +3305,6 @@
             </div>
           </section>
 
-          {/* ─── COINS & TOKENS PACKS (Realistic Spheres) ───────── */}
-          <section id="tokens" className="py-20 relative z-20 overflow-hidden border-t border-white/5">
-            <SectionBlendBg src={BLEND_BACKGROUNDS.stadium} position="left" />
-            <div className="max-w-7xl mx-auto px-6 relative z-10">
-              
-              <div className="text-center max-w-2xl mx-auto mb-16">
-                <span className="text-xs font-bold text-amber-400 tracking-widest uppercase">COIN EXCHANGE</span>
-                <h2 className="font-bebas text-5xl font-black text-white mt-1">VALIDATION COINS</h2>
-                <p className="text-xs text-gray-400 mt-2">Choose validation coins to verify your prediction entries on kickoff.</p>
-                {paymentsReady ? (
-                  <p className="text-[10px] text-emerald-300/90 mt-3 font-bold uppercase tracking-widest">
-                    {EXPERIMENTAL_VOUCHERS
-                      ? "OTT · 12-digit PIN · 1Voucher · 14-digit PIN · instant test credits"
-                      : "PayFast · OTT Voucher · 1Voucher · ZAR"}
-                  </p>
-                ) : (
-                  <p className="text-[10px] text-amber-300/80 mt-3 font-bold uppercase tracking-widest">
-                    PayFast checkout activating — packs visible for preview
-                  </p>
-                )}
-                {currentUser && (
-                  <p className="text-[11px] text-amber-400/90 mt-2 font-bold uppercase tracking-widest">
-                    Your balance: {currentUser.tokens ?? 0} tokens
-                  </p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-                {TOKEN_PACKS.map(pk => (
-                  <div 
-                    key={pk.id}
-                    className={`bg-gradient-to-b from-[#09152b] to-[#02050c] rounded-xl p-6 flex flex-col h-full transition-all duration-300 hover:scale-[1.02] border relative overflow-hidden ${
-                      pk.featured ? 'border-amber-400 shadow-[0_15px_30px_rgba(244,197,66,0.15)]' : 'border-white/10 shadow-xl'
-                    }`}
-                  >
-                    {pk.featured && (
-                      <div className="absolute top-0 right-0 left-0 bg-amber-400 text-gray-900 text-[9px] font-black tracking-widest uppercase py-1 text-center shadow">
-                        MOST POPULAR
-                      </div>
-                    )}
-
-                    {/* Highly detailed realistic golden coin sphere in the background */}
-                    <div className="absolute right-[-10px] top-[25px] opacity-15 pointer-events-none scale-125 animated-coin-bg">
-                      <div 
-                        style={{ background: `radial-gradient(circle at 35% 30%, #FFF, ${pk.color} 50%, #000 100%)` }}
-                        className="w-24 h-24 rounded-full border border-white/20 shadow-2xl"
-                      />
-                    </div>
-
-                    <div className="flex flex-col mb-6 mt-4 relative z-10">
-                      <span className="text-[10px] font-black tracking-widest uppercase mb-1" style={{ color: pk.color }}>
-                        {pk.name.toUpperCase()} SYSTEM TIER
-                      </span>
-                      <h3 className="font-bebas text-3xl uppercase tracking-wide text-white">{pk.name} COIN PACK</h3>
-                      
-                      <div className="mt-4 flex items-baseline gap-1.5">
-                        <span className="text-3xl font-bebas text-amber-400">{pk.value}</span>
-                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">VALIDATION COINS</span>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-gray-400 mb-6 flex-1 relative z-10 font-medium">
-                      {pk.description} Gain validation keys for premium matches.
-                    </p>
-
-                    <div className="relative z-10 pt-4 border-t border-white/10">
-                      <div className="flex justify-between text-xs font-bold text-gray-400 mb-4">
-                        <span>Total Coins:</span>
-                        <span className="text-amber-400">{pk.tokens} TOKENS</span>
-                      </div>
-                      
-                      <button 
-                        onClick={() => openPaymentModal(pk)}
-                        disabled={purchasingPackId === pk.id || !paymentsReady}
-                        className={`w-full py-3.5 rounded text-xs uppercase tracking-widest font-black transition-all cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed ${
-                          pk.featured ? 'bg-amber-400 text-gray-950 hover:bg-amber-300' : 'bg-[#050c18] text-white border border-white/15 hover:border-white'
-                        }`}
-                      >
-                        {purchasingPackId === pk.id
-                          ? "Processing..."
-                          : paymentsReady
-                            ? `Buy ${pk.value} Pack`
-                            : "Coming Soon"}
-                      </button>
-                    </div>
-
-                  </div>
-                ))}
-              </div>
-
-            </div>
-          </section>
-
           {/* ─── FEATURED DRAFT POOL (FUT Visualizations) ───────── */}
           <section id="featured-players" className="py-20 relative z-20 border-t border-white/10 overflow-hidden">
             <SectionBlendBg src={BLEND_BACKGROUNDS.match} position="top" />
@@ -3542,6 +3449,99 @@
                   </button>
                 </div>
               )}
+
+            </div>
+          </section>
+
+          {/* ─── COINS & TOKENS PACKS (Realistic Spheres) ───────── */}
+          <section id="tokens" className="py-20 relative z-20 overflow-hidden border-t border-white/5">
+            <SectionBlendBg src={BLEND_BACKGROUNDS.stadium} position="left" />
+            <div className="max-w-7xl mx-auto px-6 relative z-10">
+              
+              <div className="text-center max-w-2xl mx-auto mb-16">
+                <span className="text-xs font-bold text-amber-400 tracking-widest uppercase">COIN EXCHANGE</span>
+                <h2 className="font-bebas text-5xl font-black text-white mt-1">VALIDATION COINS</h2>
+                <p className="text-xs text-gray-400 mt-2">Choose validation coins to verify your prediction entries on kickoff.</p>
+                {paymentsReady ? (
+                  <p className="text-[10px] text-emerald-300/90 mt-3 font-bold uppercase tracking-widest">
+                    {EXPERIMENTAL_VOUCHERS
+                      ? "OTT · 12-digit PIN · 1Voucher · 14-digit PIN · instant test credits"
+                      : "PayFast · OTT Voucher · 1Voucher · ZAR"}
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-amber-300/80 mt-3 font-bold uppercase tracking-widest">
+                    PayFast checkout activating — packs visible for preview
+                  </p>
+                )}
+                {currentUser && (
+                  <p className="text-[11px] text-amber-400/90 mt-2 font-bold uppercase tracking-widest">
+                    Your balance: {currentUser.tokens ?? 0} tokens
+                  </p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+                {TOKEN_PACKS.map(pk => (
+                  <div 
+                    key={pk.id}
+                    className={`bg-gradient-to-b from-[#09152b] to-[#02050c] rounded-xl p-6 flex flex-col h-full transition-all duration-300 hover:scale-[1.02] border relative overflow-hidden ${
+                      pk.featured ? 'border-amber-400 shadow-[0_15px_30px_rgba(244,197,66,0.15)]' : 'border-white/10 shadow-xl'
+                    }`}
+                  >
+                    {pk.featured && (
+                      <div className="absolute top-0 right-0 left-0 bg-amber-400 text-gray-900 text-[9px] font-black tracking-widest uppercase py-1 text-center shadow">
+                        MOST POPULAR
+                      </div>
+                    )}
+
+                    {/* Highly detailed realistic golden coin sphere in the background */}
+                    <div className="absolute right-[-10px] top-[25px] opacity-15 pointer-events-none scale-125 animated-coin-bg">
+                      <div 
+                        style={{ background: `radial-gradient(circle at 35% 30%, #FFF, ${pk.color} 50%, #000 100%)` }}
+                        className="w-24 h-24 rounded-full border border-white/20 shadow-2xl"
+                      />
+                    </div>
+
+                    <div className="flex flex-col mb-6 mt-4 relative z-10">
+                      <span className="text-[10px] font-black tracking-widest uppercase mb-1" style={{ color: pk.color }}>
+                        {pk.name.toUpperCase()} SYSTEM TIER
+                      </span>
+                      <h3 className="font-bebas text-3xl uppercase tracking-wide text-white">{pk.name} COIN PACK</h3>
+                      
+                      <div className="mt-4 flex items-baseline gap-1.5">
+                        <span className="text-3xl font-bebas text-amber-400">{pk.value}</span>
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">VALIDATION COINS</span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-gray-400 mb-6 flex-1 relative z-10 font-medium">
+                      {pk.description} Gain validation keys for premium matches.
+                    </p>
+
+                    <div className="relative z-10 pt-4 border-t border-white/10">
+                      <div className="flex justify-between text-xs font-bold text-gray-400 mb-4">
+                        <span>Total Coins:</span>
+                        <span className="text-amber-400">{pk.tokens} TOKENS</span>
+                      </div>
+                      
+                      <button 
+                        onClick={() => openPaymentModal(pk)}
+                        disabled={purchasingPackId === pk.id || !paymentsReady}
+                        className={`w-full py-3.5 rounded text-xs uppercase tracking-widest font-black transition-all cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed ${
+                          pk.featured ? 'bg-amber-400 text-gray-950 hover:bg-amber-300' : 'bg-[#050c18] text-white border border-white/15 hover:border-white'
+                        }`}
+                      >
+                        {purchasingPackId === pk.id
+                          ? "Processing..."
+                          : paymentsReady
+                            ? `Buy ${pk.value} Pack`
+                            : "Coming Soon"}
+                      </button>
+                    </div>
+
+                  </div>
+                ))}
+              </div>
 
             </div>
           </section>
