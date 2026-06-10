@@ -370,12 +370,50 @@
 
     .prize-card p { font-size: 0.88rem; color: #94a3b8; }
 
+    .prize-winner-frame {
+      position: relative;
+      width: 100%;
+      min-height: 16rem;
+      aspect-ratio: 992 / 1040;
+      overflow: hidden;
+      background: linear-gradient(180deg, #041a0f 0%, #030a1a 100%);
+    }
+
     .prize-img {
       width: 100%;
-      height: 220px;
-      object-fit: cover;
-      object-position: center top;
+      height: 100%;
+      object-fit: contain;
+      object-position: center center;
       display: block;
+    }
+
+    .prize-winner-caption {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0.85rem 1rem 0.95rem;
+      background: linear-gradient(to top, rgba(3, 10, 26, 0.96) 0%, rgba(3, 10, 26, 0.6) 55%, transparent 100%);
+      z-index: 2;
+    }
+
+    .prize-winner-caption strong {
+      display: block;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    .prize-winner-caption span {
+      display: block;
+      margin-top: 0.2rem;
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #cbd5e1;
     }
 
     .giveaway-grid {
@@ -699,7 +737,13 @@
             <h3>R100,000 Winner</h3>
             <p>Verified sweepstakes champion receives R100,000 via official GoalKing presentation cheque, deposited to a nominated South African bank account.</p>
           </div>
-          <img class="prize-img" src="../cashwinner.jpg" alt="GoalKing R100,000 cash prize winner" loading="lazy" decoding="async" />
+          <div class="prize-winner-frame">
+            <img class="prize-img" src="../cashwinner.jpg" alt="GoalKing R100,000 cash prize winner" loading="lazy" decoding="async" />
+            <div class="prize-winner-caption">
+              <strong>Official R100,000 cash winner</strong>
+              <span>Pay to order of verified champion</span>
+            </div>
+          </div>
         </article>
         <article class="prize-card">
           <div class="prize-card-body">
@@ -707,7 +751,13 @@
             <h3>Hyundai Car Winner</h3>
             <p>A brand-new Hyundai prize vehicle with official key handover, registered and delivered anywhere in South Africa.</p>
           </div>
-          <img class="prize-img" src="../carwinner.jpg" alt="GoalKing Hyundai vehicle winner" loading="lazy" decoding="async" />
+          <div class="prize-winner-frame">
+            <img class="prize-img" src="../carwinner.jpg" alt="GoalKing Hyundai vehicle winner" loading="lazy" decoding="async" />
+            <div class="prize-winner-caption">
+              <strong>Official vehicle winner</strong>
+              <span>Hyundai keys · verified handover</span>
+            </div>
+          </div>
         </article>
       </div>
 
