@@ -8,6 +8,7 @@ const {
 } = require("./payfast");
 const { getPack } = require("./packs");
 const { hashPin, redeemVoucher } = require("./vouchers");
+const { assertAdmin, getDashboardData, isAdminUser } = require("./admin");
 
 admin.initializeApp();
 
@@ -235,6 +236,45 @@ exports.redeemVoucher = functions.https.onCall(async (data, context) => {
     console.error("Failed to credit voucher payment:", error);
     throw new functions.https.HttpsError("internal", "Payment succeeded but tokens could not be credited.");
   }
+});
+
+exports.adminVerifyAccess = functions.https.onCall(async (_data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Log in with an admin account.");
+  }
+  if (!isAdminUser(context)) {
+    throw new functions.https.HttpsError("permission-denied", "This account is not authorized for admin access.");
+  }
+  return {
+    admin: true,
+    email: context.auth.token.email || null,
+  };
+});
+
+exports.adminGetDashboard = functions.https.onCall(async (data, context) => {
+  assertAdmin(context);
+
+  const provider = data?.provider || "all";
+  const limit = data?.limit || 50;
+  const view = data?.view || "vouchers";
+
+  if (!["all", "ott", "onevoucher", "payfast"].includes(provider)) {
+    throw new functions.https.HttpsError("invalid-argument", "Unknown provider filter.");
+  }
+
+  if (!["vouchers", "payments"].includes(view)) {
+    throw new functions.https.HttpsError("invalid-argument", "Unknown dashboard view.");
+  }
+
+  const dashboard = await getDashboardData({ provider, limit, view });
+  return {
+    provider,
+    view,
+    limit,
+    generatedAt: new Date().toISOString(),
+    stats: dashboard.stats,
+    rows: dashboard.rows,
+  };
 });
 
 exports.payfastItn = functions.https.onRequest(async (req, res) => {

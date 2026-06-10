@@ -261,3 +261,37 @@ firebase functions:config:set \
 5. Tokens appear immediately in your balance
 
 Each PIN can only be redeemed once (tracked in Firestore `redeemed_vouchers`).
+
+## Admin voucher dashboard
+
+Staff can review OTT, 1Voucher, and PayFast redemptions at:
+
+**https://playmzansi.online/admin.html**
+
+### 1) Create an admin login
+
+Firebase Console → **Authentication** → **Users** → **Add user**
+
+Use a dedicated admin email (e.g. `admin@playmzansi.online`) and a strong password. This account is separate from player sign-ups.
+
+### 2) Allowlist admin emails
+
+Only emails on the server allowlist can open the dashboard:
+
+```bash
+firebase functions:config:set admin.emails="admin@playmzansi.online,your-email@example.com"
+firebase deploy --only functions,firestore:indexes
+```
+
+You can also set `ADMIN_EMAILS` as a comma-separated environment variable on Cloud Functions.
+
+### 3) What the dashboard shows
+
+| View | Data |
+|------|------|
+| **Redeemed vouchers** | `redeemed_vouchers` — OTT & 1Voucher PIN redemptions |
+| **All payments** | `payments` — includes PayFast, OTT, and 1Voucher |
+
+Each row includes date, provider, pack, amount, tokens, user email, transaction ID, and sandbox/live mode. Full voucher PINs are **never** stored — only a short SHA-256 hash prefix for audit.
+
+Filter by provider (All · OTT · 1Voucher · PayFast) and refresh live from Firestore via secured Cloud Functions (`adminVerifyAccess`, `adminGetDashboard`).

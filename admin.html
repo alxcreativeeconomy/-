@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>GoalKing Admin · Vouchers</title>
+  <script>
+    (function () {
+      var path = window.location.pathname || "/";
+      var base = "/";
+      if (window.location.hostname.endsWith("github.io") && path.indexOf("/-/") === 0) {
+        base = "/-/";
+      }
+      var tag = document.createElement("base");
+      tag.href = base;
+      document.head.appendChild(tag);
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="logo.svg" />
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .font-bebas { font-family: 'Bebas Neue', sans-serif; }
+    .font-sans { font-family: 'Barlow', sans-serif; }
+    html, body { background: #030712; }
+    .glass-panel-gold {
+      background: rgba(3, 11, 26, 0.9);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(244, 197, 66, 0.2);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    }
+    .text-neon-gold { color: #f4c542; }
+    .btn-gold {
+      background: linear-gradient(90deg, #f4c542, #c8991e);
+      color: #030712;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .gold-glow-border:focus {
+      border-color: #f4c542 !important;
+      box-shadow: 0 0 12px rgba(244, 197, 66, 0.35) !important;
+      outline: none;
+    }
+    .admin-table th, .admin-table td {
+      padding: 0.75rem 0.85rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.78rem;
+      vertical-align: top;
+    }
+    .admin-table th {
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      font-size: 0.65rem;
+      background: rgba(4, 19, 38, 0.8);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .provider-pill {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .provider-ott { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+    .provider-onevoucher { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; }
+    .provider-payfast { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
+  </style>
+</head>
+<body class="font-sans text-white min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+
+    const firebaseReady = Boolean(window.FIREBASE_CONFIG?.apiKey && window.FIREBASE_CONFIG?.projectId);
+    let firebaseAuth = null;
+    let firebaseFunctions = null;
+
+    if (firebaseReady) {
+      firebase.initializeApp(window.FIREBASE_CONFIG);
+      firebaseAuth = firebase.auth();
+      firebaseFunctions = firebase.app().functions("us-central1");
+    }
+
+    const PROVIDER_FILTERS = [
+      { id: "all", label: "All" },
+      { id: "ott", label: "OTT" },
+      { id: "onevoucher", label: "1Voucher" },
+      { id: "payfast", label: "PayFast" },
+    ];
+
+    const VIEW_TABS = [
+      { id: "vouchers", label: "Redeemed vouchers" },
+      { id: "payments", label: "All payments" },
+    ];
+
+    const mapAdminError = (error) => {
+      const code = error?.code || "";
+      const messages = {
+        "functions/unauthenticated": "Log in with your admin email and password.",
+        "functions/permission-denied": "This account is not on the admin allowlist.",
+        "functions/unavailable": "Admin service unavailable. Try again shortly.",
+        "auth/invalid-credential": "Invalid email or password.",
+        "auth/user-not-found": "No admin account found with that email.",
+        "auth/wrong-password": "Incorrect password.",
+        "auth/too-many-requests": "Too many attempts. Wait a moment and try again.",
+      };
+      return messages[code] || error?.message || "Something went wrong.";
+    };
+
+    const formatDate = (iso) => {
+      if (!iso) return "—";
+      const date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return iso;
+      return date.toLocaleString("en-ZA", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    };
+
+    const ProviderPill = ({ provider }) => {
+      const key = provider === "onevoucher" ? "onevoucher" : provider;
+      return (
+        <span className={`provider-pill provider-${key}`}>
+          {provider === "onevoucher" ? "1Voucher" : provider}
+        </span>
+      );
+    };
+
+    const StatCard = ({ label, value, accent }) => (
+      <div className="glass-panel-gold rounded-xl p-4">
+        <p className="text-[10px] uppercase tracking-widest text-gray-400 font-bold mb-1">{label}</p>
+        <p className="font-bebas text-3xl tracking-wide" style={{ color: accent || "#f4c542" }}>{value}</p>
+      </div>
+    );
+
+    function AdminApp() {
+      const [session, setSession] = useState(null);
+      const [checkingSession, setCheckingSession] = useState(Boolean(firebaseAuth));
+      const [email, setEmail] = useState("");
+      const [password, setPassword] = useState("");
+      const [authError, setAuthError] = useState("");
+      const [authSubmitting, setAuthSubmitting] = useState(false);
+
+      const [provider, setProvider] = useState("all");
+      const [view, setView] = useState("vouchers");
+      const [rows, setRows] = useState([]);
+      const [stats, setStats] = useState(null);
+      const [dashboardError, setDashboardError] = useState("");
+      const [loadingDashboard, setLoadingDashboard] = useState(false);
+      const [generatedAt, setGeneratedAt] = useState(null);
+
+      const verifyAdmin = useCallback(async (user) => {
+        if (!user || !firebaseFunctions) return null;
+        const verify = firebaseFunctions.httpsCallable("adminVerifyAccess");
+        await verify();
+        return {
+          email: user.email,
+          uid: user.uid,
+        };
+      }, []);
+
+      const loadDashboard = useCallback(async (nextProvider = provider, nextView = view) => {
+        if (!firebaseFunctions || !session) return;
+        setLoadingDashboard(true);
+        setDashboardError("");
+        try {
+          const getDashboard = firebaseFunctions.httpsCallable("adminGetDashboard");
+          const result = await getDashboard({
+            provider: nextProvider,
+            view: nextView,
+            limit: 100,
+          });
+          setRows(result?.data?.rows || []);
+          setStats(result?.data?.stats || null);
+          setGeneratedAt(result?.data?.generatedAt || null);
+        } catch (error) {
+          setDashboardError(mapAdminError(error));
+          setRows([]);
+          setStats(null);
+        } finally {
+          setLoadingDashboard(false);
+        }
+      }, [provider, view, session]);
+
+      useEffect(() => {
+        if (!firebaseAuth) {
+          setCheckingSession(false);
+          return undefined;
+        }
+
+        const unsubscribe = firebaseAuth.onAuthStateChanged(async (user) => {
+          setCheckingSession(true);
+          setAuthError("");
+          try {
+            if (!user) {
+              setSession(null);
+              return;
+            }
+            const adminSession = await verifyAdmin(user);
+            setSession(adminSession);
+          } catch (error) {
+            setSession(null);
+            setAuthError(mapAdminError(error));
+            await firebaseAuth.signOut();
+          } finally {
+            setCheckingSession(false);
+          }
+        });
+
+        return () => unsubscribe();
+      }, [verifyAdmin]);
+
+      useEffect(() => {
+        if (session) {
+          loadDashboard(provider, view);
+        }
+      }, [session, provider, view, loadDashboard]);
+
+      const handleLogin = async (e) => {
+        e.preventDefault();
+        if (!firebaseAuth) {
+          setAuthError("Firebase is not configured.");
+          return;
+        }
+        if (!email || !password) {
+          setAuthError("Enter your admin email and password.");
+          return;
+        }
+
+        setAuthSubmitting(true);
+        setAuthError("");
+        try {
+          await firebaseAuth.signInWithEmailAndPassword(email.trim(), password);
+        } catch (error) {
+          setAuthError(mapAdminError(error));
+        } finally {
+          setAuthSubmitting(false);
+        }
+      };
+
+      const handleLogout = async () => {
+        if (firebaseAuth) await firebaseAuth.signOut();
+        setSession(null);
+        setRows([]);
+        setStats(null);
+        setPassword("");
+      };
+
+      if (!firebaseReady) {
+        return (
+          <div className="min-h-screen flex items-center justify-center p-6">
+            <div className="glass-panel-gold rounded-2xl p-8 max-w-md text-center">
+              <h1 className="font-bebas text-4xl mb-3">GOALKING ADMIN</h1>
+              <p className="text-sm text-gray-400">Firebase config is missing. Add `public/firebase-config.js` or deploy with GitHub secrets.</p>
+            </div>
+          </div>
+        );
+      }
+
+      if (checkingSession) {
+        return (
+          <div className="min-h-screen flex items-center justify-center p-6">
+            <p className="text-sm text-gray-400 uppercase tracking-widest font-bold">Checking admin session...</p>
+          </div>
+        );
+      }
+
+      if (!session) {
+        return (
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="glass-panel-gold w-full max-w-md rounded-2xl overflow-hidden">
+              <div className="p-6 border-b border-white/10">
+                <h1 className="font-bebas text-4xl tracking-wider">
+                  GOAL<span className="text-neon-gold">KING</span> ADMIN
+                </h1>
+                <p className="text-xs text-gray-400 mt-2">Voucher &amp; payment dashboard</p>
+              </div>
+              <form onSubmit={handleLogin} className="p-6 space-y-4 bg-[#030712]/95">
+                {authError && (
+                  <div className="p-3 bg-red-950/50 border border-red-500/30 rounded-lg text-xs text-red-200">
+                    {authError}
+                  </div>
+                )}
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Admin email</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-[#050c18] border border-white/15 rounded-lg py-3 px-4 text-sm gold-glow-border"
+                    placeholder="admin@playmzansi.online"
+                    autoComplete="username"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Password</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-[#050c18] border border-white/15 rounded-lg py-3 px-4 text-sm gold-glow-border"
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={authSubmitting}
+                  className="w-full py-3.5 rounded-lg btn-gold text-sm tracking-widest border-0 cursor-pointer disabled:opacity-60"
+                >
+                  {authSubmitting ? "Signing in..." : "Sign in"}
+                </button>
+              </form>
+              <div className="p-4 text-[10px] text-gray-500 border-t border-white/5 text-center">
+                Only allowlisted admin emails can access this dashboard.
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen">
+          <header className="border-b border-white/10 bg-[#041326]/90 backdrop-blur-md sticky top-0 z-20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h1 className="font-bebas text-3xl tracking-wider">
+                  GOAL<span className="text-neon-gold">KING</span> ADMIN
+                </h1>
+                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-0.5">
+                  Signed in as {session.email}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <a href="index.html" className="text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-white no-underline px-3 py-2">
+                  Main site
+                </a>
+                <button
+                  type="button"
+                  onClick={() => loadDashboard()}
+                  disabled={loadingDashboard}
+                  className="text-[10px] font-bold uppercase tracking-widest text-amber-300 border border-amber-400/30 rounded-lg px-3 py-2 bg-transparent cursor-pointer disabled:opacity-60"
+                >
+                  {loadingDashboard ? "Refreshing..." : "Refresh"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="text-[10px] font-bold uppercase tracking-widest text-gray-300 border border-white/15 rounded-lg px-3 py-2 bg-transparent cursor-pointer"
+                >
+                  Log out
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+            {dashboardError && (
+              <div className="p-4 bg-red-950/40 border border-red-500/30 rounded-xl text-sm text-red-200">
+                {dashboardError}
+              </div>
+            )}
+
+            {stats && (
+              <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+                <StatCard label="Records" value={stats.total} />
+                <StatCard label="OTT" value={stats.ott} accent="#93c5fd" />
+                <StatCard label="1Voucher" value={stats.onevoucher} accent="#d8b4fe" />
+                <StatCard label="PayFast" value={stats.payfast} accent="#6ee7b7" />
+                <StatCard label="Sandbox" value={stats.sandbox} accent="#fbbf24" />
+                <StatCard label="Total ZAR" value={`R${stats.totalZar}`} />
+                <StatCard label="Tokens" value={stats.totalTokens} />
+              </div>
+            )}
+
+            <div className="glass-panel-gold rounded-2xl overflow-hidden">
+              <div className="p-4 sm:p-5 border-b border-white/10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="flex gap-1 p-1 bg-[#050c18] rounded-lg border border-white/10 w-fit">
+                  {VIEW_TABS.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setView(tab.id)}
+                      className="px-3 py-2 rounded-md text-[10px] font-black uppercase tracking-widest border-0 cursor-pointer"
+                      style={{
+                        background: view === tab.id ? "#f4c542" : "transparent",
+                        color: view === tab.id ? "#030712" : "#9CA3AF",
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {PROVIDER_FILTERS.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setProvider(item.id)}
+                      disabled={view === "vouchers" && item.id === "payfast"}
+                      className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border cursor-pointer disabled:opacity-35"
+                      style={{
+                        background: provider === item.id ? "rgba(244,197,66,0.15)" : "transparent",
+                        borderColor: provider === item.id ? "rgba(244,197,66,0.45)" : "rgba(255,255,255,0.12)",
+                        color: provider === item.id ? "#f4c542" : "#9CA3AF",
+                      }}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="overflow-x-auto max-h-[70vh]">
+                <table className="admin-table w-full min-w-[960px]">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Provider</th>
+                      <th>Pack</th>
+                      <th>Amount</th>
+                      <th>Tokens</th>
+                      <th>User</th>
+                      <th>Transaction</th>
+                      <th>PIN hash</th>
+                      <th>Mode</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loadingDashboard && rows.length === 0 ? (
+                      <tr>
+                        <td colSpan="9" className="text-center text-gray-500 py-10">Loading records...</td>
+                      </tr>
+                    ) : rows.length === 0 ? (
+                      <tr>
+                        <td colSpan="9" className="text-center text-gray-500 py-10">No records yet for this filter.</td>
+                      </tr>
+                    ) : (
+                      rows.map((row) => (
+                        <tr key={row.id} className="hover:bg-white/[0.02]">
+                          <td className="text-gray-300 whitespace-nowrap">{formatDate(row.createdAt)}</td>
+                          <td><ProviderPill provider={row.provider} /></td>
+                          <td className="text-gray-200">{row.packName}</td>
+                          <td className="text-amber-300 font-bold">R{row.amount}</td>
+                          <td className="text-gray-300">{row.tokens}</td>
+                          <td>
+                            <div className="text-gray-200">{row.user?.email || "—"}</div>
+                            <div className="text-[10px] text-gray-500">{row.user?.username || row.uid}</div>
+                          </td>
+                          <td className="text-gray-400 font-mono text-[10px] break-all max-w-[140px]">
+                            {row.transactionId || row.paymentId || "—"}
+                          </td>
+                          <td className="text-gray-500 font-mono text-[10px]">
+                            {row.pinHashPrefix ? `${row.pinHashPrefix}…` : "—"}
+                          </td>
+                          <td>
+                            {row.sandbox ? (
+                              <span className="text-[10px] font-bold uppercase text-amber-300">Sandbox</span>
+                            ) : (
+                              <span className="text-[10px] font-bold uppercase text-emerald-300">Live</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {generatedAt && (
+                <div className="p-3 border-t border-white/5 text-[10px] text-gray-500 text-right">
+                  Last updated {formatDate(generatedAt)}
+                </div>
+              )}
+            </div>
+
+            <p className="text-[10px] text-gray-500 text-center pb-8">
+              Voucher PINs are never stored — only a SHA-256 hash prefix is shown for audit trails.
+            </p>
+          </main>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<AdminApp />);
+  </script>
+</body>
+</html>
