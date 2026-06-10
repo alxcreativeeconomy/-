@@ -1275,6 +1275,21 @@
 
     const EXPERIMENTAL_VOUCHERS = true;
 
+    const VOUCHER_PIN_COPY = {
+      ott: {
+        digits: "12-digit",
+        hint: "Enter your 12-digit OTT voucher PIN.",
+        placeholder: "1234 5678 9012",
+        maxLength: 14,
+      },
+      onevoucher: {
+        digits: "14-digit",
+        hint: "Enter your 14-digit 1Voucher PIN.",
+        placeholder: "9876 5432 1098 76",
+        maxLength: 17,
+      },
+    };
+
     const getExperimentalTokenKey = (uid) => `goalking_experimental_tokens_${uid}`;
 
     const loadExperimentalTokens = (uid) => {
@@ -2817,16 +2832,13 @@
                   ) : (
                     <form onSubmit={handleRedeemVoucher} className="space-y-4">
                       <p className="text-xs text-gray-400 leading-relaxed">
-                        {EXPERIMENTAL_VOUCHERS
-                          ? "Experimental mode: enter any voucher PIN (even a test/fake one). Tokens for this pack are credited instantly to your balance."
-                          : paymentMethod === "ott"
-                            ? "Enter the 12-digit PIN from your OTT voucher. Tokens are credited instantly after validation."
-                            : "Enter the 14–16 digit PIN from your 1Voucher. Tokens are credited instantly after validation."}
+                        {VOUCHER_PIN_COPY[paymentMethod === "ott" ? "ott" : "onevoucher"].hint}
+                        {" "}Tokens for this pack are credited instantly to your balance.
                       </p>
 
                       <div>
                         <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
-                          Voucher PIN
+                          Voucher PIN · {VOUCHER_PIN_COPY[paymentMethod === "ott" ? "ott" : "onevoucher"].digits}
                         </label>
                         <input
                           type="text"
@@ -2834,10 +2846,13 @@
                           autoComplete="off"
                           value={voucherPin}
                           onChange={(e) => setVoucherPin(e.target.value.replace(/[^\d\s]/g, ""))}
-                          placeholder={EXPERIMENTAL_VOUCHERS ? "Any test PIN works" : paymentMethod === "ott" ? "1234 5678 9012" : "9876 5432 1098 76"}
-                          maxLength={paymentMethod === "ott" ? 14 : 19}
+                          placeholder={VOUCHER_PIN_COPY[paymentMethod === "ott" ? "ott" : "onevoucher"].placeholder}
+                          maxLength={VOUCHER_PIN_COPY[paymentMethod === "ott" ? "ott" : "onevoucher"].maxLength}
                           className="w-full bg-[#050c18] border border-white/15 rounded-lg py-3 px-4 text-sm text-white gold-glow-border tracking-widest font-mono"
                         />
+                        <p className="text-[10px] text-amber-300/80 mt-2 font-bold uppercase tracking-widest">
+                          {paymentMethod === "ott" ? "OTT requires 12 digits" : "1Voucher requires 14 digits"}
+                        </p>
                       </div>
 
                       {paymentMethod === "ott" && (
@@ -2872,7 +2887,7 @@
 
                 <div className="p-4 bg-[#041326] text-[10px] text-gray-400 border-t border-white/5 text-center px-6">
                   {EXPERIMENTAL_VOUCHERS
-                    ? "Experimental mode · OTT & 1Voucher accept any PIN · tokens credited for testing"
+                    ? "OTT · 12-digit PIN · 1Voucher · 14-digit PIN · tokens credited for testing"
                     : "Voucher PINs are single-use. PayFast · OTT · 1Voucher accepted in ZAR."}
                 </div>
               </div>
@@ -3158,7 +3173,7 @@
                 {paymentsReady ? (
                   <p className="text-[10px] text-emerald-300/90 mt-3 font-bold uppercase tracking-widest">
                     {EXPERIMENTAL_VOUCHERS
-                      ? "Experimental · OTT & 1Voucher accept any PIN · instant test credits"
+                      ? "OTT · 12-digit PIN · 1Voucher · 14-digit PIN · instant test credits"
                       : "PayFast · OTT Voucher · 1Voucher · ZAR"}
                   </p>
                 ) : (
