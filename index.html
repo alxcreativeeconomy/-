@@ -41,7 +41,17 @@
     .font-cond { font-family: 'Barlow Condensed', sans-serif; }
     .font-sans { font-family: 'Barlow', sans-serif; }
 
-    html { scroll-behavior: smooth; background-color: #030712; }
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 6rem;
+      background-color: #030712;
+    }
+
+    #hero,
+    #featured-players,
+    #tokens {
+      scroll-margin-top: 6rem;
+    }
     
     /* Premium Glassmorphic Broadcast Panel Styling */
     .glass-panel-gold {
@@ -294,7 +304,7 @@
       background: transparent;
       border: none;
       cursor: pointer;
-      transition: all 0.25s ease;
+      transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
       white-space: nowrap;
       flex-shrink: 0;
     }
@@ -1254,6 +1264,8 @@
       { id: "stake", label: "Stake", icon: "Stake", section: "tokens" }
     ];
 
+    const NAV_SCROLL_OFFSET = 96;
+
     const FIREBASE_PLACEHOLDER = "YOUR_API_KEY";
     const firebaseReady = typeof firebase !== "undefined"
       && window.FIREBASE_CONFIG
@@ -1559,6 +1571,8 @@
       const [simulationFocus, setSimulationFocus] = useState(false);
       const [lastRoundGoals, setLastRoundGoals] = useState(0);
       const introVideoRef = useRef(null);
+      const navScrollLockRef = useRef(false);
+      const scrollSpyFrameRef = useRef(null);
 
       // Auth Options
       const [currentUser, setCurrentUser] = useState(null);
@@ -1635,27 +1649,53 @@
         return () => { document.body.style.overflow = ""; };
       }, [showIntro]);
 
-      const handleNavClick = useCallback((item) => {
-        setActiveNav(item.id);
-        const el = document.getElementById(item.section);
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-        else window.scrollTo({ top: 0, behavior: "smooth" });
+      const scrollToSection = useCallback((sectionId) => {
+        const el = document.getElementById(sectionId);
+        if (!el) {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          return;
+        }
+        const top = Math.max(0, el.getBoundingClientRect().top + window.scrollY - NAV_SCROLL_OFFSET);
+        window.scrollTo({ top, behavior: "smooth" });
       }, []);
 
+      const handleNavClick = useCallback((item) => {
+        setActiveNav(item.id);
+        navScrollLockRef.current = true;
+        scrollToSection(item.section);
+        window.setTimeout(() => {
+          navScrollLockRef.current = false;
+        }, 900);
+      }, [scrollToSection]);
+
       useEffect(() => {
-        const handleScroll = () => {
+        const updateScrollState = () => {
           setScrolled(window.scrollY > 50);
 
-          const scrollPos = window.scrollY + 120;
+          if (navScrollLockRef.current) return;
+
+          const scrollPos = window.scrollY + NAV_SCROLL_OFFSET + 8;
+          let nextActive = NAV_LINKS[0].id;
           for (let i = NAV_LINKS.length - 1; i >= 0; i--) {
             const section = document.getElementById(NAV_LINKS[i].section);
             if (section && section.offsetTop <= scrollPos) {
-              setActiveNav(NAV_LINKS[i].id);
+              nextActive = NAV_LINKS[i].id;
               break;
             }
           }
+          setActiveNav((prev) => (prev === nextActive ? prev : nextActive));
         };
-        window.addEventListener("scroll", handleScroll);
+
+        const handleScroll = () => {
+          if (scrollSpyFrameRef.current) return;
+          scrollSpyFrameRef.current = window.requestAnimationFrame(() => {
+            scrollSpyFrameRef.current = null;
+            updateScrollState();
+          });
+        };
+
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        updateScrollState();
         
         const targetDate = new Date("2026-06-11T18:00:00Z");
         const calcTime = () => {
@@ -1672,6 +1712,9 @@
 
         return () => {
           window.removeEventListener("scroll", handleScroll);
+          if (scrollSpyFrameRef.current) {
+            window.cancelAnimationFrame(scrollSpyFrameRef.current);
+          }
           clearInterval(tid);
         };
       }, []);
@@ -2356,10 +2399,10 @@
         }
         setSimulationFocus(true);
         setTimeout(() => {
-          document.getElementById("leaderboard-tracker")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          scrollToSection("leaderboard-tracker");
         }, 50);
         showToast(`Simulating tournament path for ${selectedPlayer.name}…`, "info");
-      }, [selectedPlayer, showToast]);
+      }, [selectedPlayer, showToast, scrollToSection]);
 
       const advanceTournamentStage = () => {
         if (currentStage >= 4) {
@@ -3044,9 +3087,9 @@
               background: scrolled ? "rgba(4, 19, 38, 0.95)" : "rgba(0, 0, 0, 0.75)",
               backdropFilter: "blur(15px)"
             }}
-            className="fixed top-0 left-0 right-0 h-20 z-50 flex items-center justify-between gap-1 sm:gap-2 px-2 sm:px-6 md:px-12 border-b border-amber-400/15 transition-all duration-300"
+            className="fixed top-0 left-0 right-0 h-20 z-50 flex items-center justify-between gap-1 sm:gap-2 px-2 sm:px-6 md:px-12 border-b border-amber-400/15 transition-[background,backdrop-filter] duration-300"
           >
-            <div className="flex items-center gap-1.5 sm:gap-3 cursor-pointer shrink-0 max-w-[38%] sm:max-w-none" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+            <div className="flex items-center gap-1.5 sm:gap-3 cursor-pointer shrink-0 max-w-[38%] sm:max-w-none" onClick={() => handleNavClick(NAV_LINKS[0])}>
               <img src={assetPath("logo.svg")} alt="GoalKing" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full shadow-[0_0_15px_rgba(244,197,66,0.25)] shrink-0" />
               <span className="font-bebas text-xl sm:text-2xl tracking-wider text-white hidden min-[400px]:inline">
                 GOAL<span className="text-amber-400">KING</span>
@@ -3177,13 +3220,13 @@
 
               <div className="flex flex-col sm:flex-row gap-4 items-center mt-6 w-full sm:w-auto">
                 <button 
-                  onClick={() => document.getElementById("featured-players")?.scrollIntoView({ behavior: "smooth" })}
+                  onClick={() => handleNavClick(NAV_LINKS[1])}
                   className="btn-gold w-full sm:w-auto text-center text-xs uppercase tracking-widest font-black px-8 py-3.5 rounded border-0"
                 >
                   Predict Standings
                 </button>
                 <button 
-                  onClick={() => document.getElementById("prizes")?.scrollIntoView({ behavior: "smooth" })}
+                  onClick={() => scrollToSection("prizes")}
                   className="w-full sm:w-auto text-center text-xs uppercase tracking-widest font-black border border-white/20 hover:border-white text-white bg-transparent px-8 py-3.5 rounded transition-all cursor-pointer"
                 >
                   Explore Prizes
