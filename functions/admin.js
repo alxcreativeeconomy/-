@@ -195,9 +195,62 @@ async function fetchRedeemedVouchers({ provider = "all", limit = 50 }) {
   };
 }
 
+async function fetchTestRedemptions({ provider = "all", limit = 50 }) {
+  const safeLimit = Math.min(Math.max(Number.parseInt(limit, 10) || 50, 1), 200);
+  let query = db.collection("test_redemptions").orderBy("createdAt", "desc").limit(safeLimit);
+
+  if (provider === "ott" || provider === "onevoucher") {
+    query = db.collection("test_redemptions")
+      .where("provider", "==", provider)
+      .orderBy("createdAt", "desc")
+      .limit(safeLimit);
+  }
+
+  const snap = await query.get();
+  const rows = snap.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      uid: data.uid || null,
+      provider: data.provider || "unknown",
+      packId: data.packId || null,
+      packName: data.packName || data.packId || "Unknown pack",
+      tokens: data.tokens || 0,
+      amount: data.amount || "0.00",
+      status: "test",
+      sandbox: true,
+      experimental: true,
+      pinEntered: data.pinEntered || "—",
+      pinLength: data.pinLength ?? null,
+      newBalance: data.newBalance ?? null,
+      playerShort: data.playerShort || null,
+      playerName: data.playerName || null,
+      transactionId: null,
+      pinHashPrefix: null,
+      createdAt: toIso(data.createdAt),
+      user: {
+        uid: data.uid || null,
+        email: data.email || null,
+        username: data.username || null,
+      },
+    };
+  });
+
+  const stats = buildStats(rows);
+  stats.experimental = rows.length;
+
+  return { rows, stats };
+}
+
 async function getDashboardData({ provider = "all", limit = 50, view = "vouchers" }) {
   if (view === "payments") {
     return fetchPayments({ provider, limit });
+  }
+  if (view === "test") {
+    return fetchTestRedemptions({
+      provider: provider === "payfast" ? "all" : provider,
+      limit,
+    });
   }
   return fetchRedeemedVouchers({
     provider: provider === "payfast" ? "all" : provider,

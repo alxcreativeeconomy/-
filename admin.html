@@ -104,6 +104,7 @@
     ];
 
     const VIEW_TABS = [
+      { id: "test", label: "Test redemptions" },
       { id: "vouchers", label: "Redeemed vouchers" },
       { id: "payments", label: "All payments" },
     ];
@@ -160,7 +161,7 @@
       const [authSubmitting, setAuthSubmitting] = useState(false);
 
       const [provider, setProvider] = useState("all");
-      const [view, setView] = useState("vouchers");
+      const [view, setView] = useState("test");
       const [rows, setRows] = useState([]);
       const [stats, setStats] = useState(null);
       const [dashboardError, setDashboardError] = useState("");
@@ -380,12 +381,16 @@
             )}
 
             {stats && (
-              <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+              <div className={`grid grid-cols-2 gap-3 ${view === "test" ? "lg:grid-cols-5" : "lg:grid-cols-4 xl:grid-cols-7"}`}>
                 <StatCard label="Records" value={stats.total} />
                 <StatCard label="OTT" value={stats.ott} accent="#93c5fd" />
                 <StatCard label="1Voucher" value={stats.onevoucher} accent="#d8b4fe" />
-                <StatCard label="PayFast" value={stats.payfast} accent="#6ee7b7" />
-                <StatCard label="Sandbox" value={stats.sandbox} accent="#fbbf24" />
+                {view !== "test" && <StatCard label="PayFast" value={stats.payfast} accent="#6ee7b7" />}
+                <StatCard
+                  label={view === "test" ? "Test mode" : "Sandbox"}
+                  value={view === "test" ? (stats.experimental ?? stats.total) : stats.sandbox}
+                  accent="#fbbf24"
+                />
                 <StatCard label="Total ZAR" value={`R${stats.totalZar}`} />
                 <StatCard label="Tokens" value={stats.totalTokens} />
               </div>
@@ -416,7 +421,7 @@
                       key={item.id}
                       type="button"
                       onClick={() => setProvider(item.id)}
-                      disabled={view === "vouchers" && item.id === "payfast"}
+                      disabled={(view === "vouchers" || view === "test") && item.id === "payfast"}
                       className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border cursor-pointer disabled:opacity-35"
                       style={{
                         background: provider === item.id ? "rgba(244,197,66,0.15)" : "transparent",
@@ -440,9 +445,19 @@
                       <th>Amount</th>
                       <th>Tokens</th>
                       <th>User</th>
-                      <th>Transaction</th>
-                      <th>PIN hash</th>
-                      <th>Mode</th>
+                      {view === "test" ? (
+                        <>
+                          <th>PIN entered</th>
+                          <th>Player pick</th>
+                          <th>Balance</th>
+                        </>
+                      ) : (
+                        <>
+                          <th>Transaction</th>
+                          <th>PIN hash</th>
+                          <th>Mode</th>
+                        </>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -452,7 +467,11 @@
                       </tr>
                     ) : rows.length === 0 ? (
                       <tr>
-                        <td colSpan="9" className="text-center text-gray-500 py-10">No records yet for this filter.</td>
+                        <td colSpan="9" className="text-center text-gray-500 py-10">
+                          {view === "test"
+                            ? "No test redemptions yet. Redeem a voucher on the main site to see entries here."
+                            : "No records yet for this filter."}
+                        </td>
                       </tr>
                     ) : (
                       rows.map((row) => (
@@ -466,19 +485,43 @@
                             <div className="text-gray-200">{row.user?.email || "—"}</div>
                             <div className="text-[10px] text-gray-500">{row.user?.username || row.uid}</div>
                           </td>
-                          <td className="text-gray-400 font-mono text-[10px] break-all max-w-[140px]">
-                            {row.transactionId || row.paymentId || "—"}
-                          </td>
-                          <td className="text-gray-500 font-mono text-[10px]">
-                            {row.pinHashPrefix ? `${row.pinHashPrefix}…` : "—"}
-                          </td>
-                          <td>
-                            {row.sandbox ? (
-                              <span className="text-[10px] font-bold uppercase text-amber-300">Sandbox</span>
-                            ) : (
-                              <span className="text-[10px] font-bold uppercase text-emerald-300">Live</span>
-                            )}
-                          </td>
+                          {view === "test" ? (
+                            <>
+                              <td className="text-amber-200 font-mono text-[10px] tracking-wider">
+                                {row.pinEntered || "—"}
+                                {row.pinLength != null && (
+                                  <div className="text-[9px] text-gray-500 mt-0.5">{row.pinLength} digits</div>
+                                )}
+                              </td>
+                              <td className="text-gray-300">
+                                {row.playerShort ? (
+                                  <>
+                                    <div className="font-bold text-white">{row.playerShort}</div>
+                                    <div className="text-[10px] text-gray-500">{row.playerName || "—"}</div>
+                                  </>
+                                ) : "—"}
+                              </td>
+                              <td className="text-amber-300 font-bold">
+                                {row.newBalance != null ? `${row.newBalance} tokens` : "—"}
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="text-gray-400 font-mono text-[10px] break-all max-w-[140px]">
+                                {row.transactionId || row.paymentId || "—"}
+                              </td>
+                              <td className="text-gray-500 font-mono text-[10px]">
+                                {row.pinHashPrefix ? `${row.pinHashPrefix}…` : "—"}
+                              </td>
+                              <td>
+                                {row.sandbox ? (
+                                  <span className="text-[10px] font-bold uppercase text-amber-300">Sandbox</span>
+                                ) : (
+                                  <span className="text-[10px] font-bold uppercase text-emerald-300">Live</span>
+                                )}
+                              </td>
+                            </>
+                          )}
                         </tr>
                       ))
                     )}
@@ -494,7 +537,9 @@
             </div>
 
             <p className="text-[10px] text-gray-500 text-center pb-8">
-              Voucher PINs are never stored — only a SHA-256 hash prefix is shown for audit trails.
+              {view === "test"
+                ? "Test redemptions log experimental OTT/1Voucher entries from the main site, including fake PINs entered during testing."
+                : "Live voucher PINs are hashed — only a SHA-256 prefix is shown for audit trails."}
             </p>
           </main>
         </div>

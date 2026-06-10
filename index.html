@@ -2104,11 +2104,28 @@
           if (EXPERIMENTAL_VOUCHERS) {
             await new Promise((resolve) => setTimeout(resolve, 500));
 
+            const pin = voucherPin.replace(/\s+/g, "").trim();
             addExperimentalTokens(currentUser.uid, paymentPack.tokens);
             const profile = firebaseDb ? await loadUserProfile(currentUser.uid) : null;
             const firestoreTokens = profile?.tokens ?? 0;
             const newBalance = firestoreTokens + loadExperimentalTokens(currentUser.uid);
             const credited = paymentPack.tokens;
+
+            if (firebaseFunctions) {
+              try {
+                const logTestRedemption = firebaseFunctions.httpsCallable("logExperimentalRedemption");
+                await logTestRedemption({
+                  provider,
+                  packId: paymentPack.id,
+                  pin,
+                  newBalance,
+                  playerShort: pendingLockPlayer?.short || null,
+                  playerName: pendingLockPlayer?.name || null,
+                });
+              } catch (logError) {
+                console.warn("Could not log test redemption for admin dashboard:", logError);
+              }
+            }
 
             setCurrentUser((prev) => (prev ? { ...prev, tokens: newBalance } : prev));
             closePaymentModal();

@@ -271,6 +271,48 @@ exports.redeemVoucher = functions.https.onCall(async (data, context) => {
   }
 });
 
+exports.logExperimentalRedemption = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Log in to record a test redemption.");
+  }
+
+  const provider = data?.provider;
+  const packId = data?.packId;
+
+  if (!["ott", "onevoucher"].includes(provider)) {
+    throw new functions.https.HttpsError("invalid-argument", "Choose OTT or 1Voucher.");
+  }
+
+  const pack = getPack(packId);
+  if (!pack) {
+    throw new functions.https.HttpsError("invalid-argument", "Unknown token pack.");
+  }
+
+  const pin = String(data?.pin || "").replace(/\s+/g, "").trim();
+  const userSnap = await db.collection("users").doc(context.auth.uid).get();
+  const userData = userSnap.data() || {};
+
+  const docRef = await db.collection("test_redemptions").add({
+    uid: context.auth.uid,
+    email: context.auth.token.email || userData.email || null,
+    username: userData.username || null,
+    provider,
+    packId,
+    packName: pack.name,
+    tokens: pack.tokens,
+    amount: pack.amount,
+    pinEntered: pin || "(empty)",
+    pinLength: pin.length,
+    newBalance: Number.isFinite(Number(data?.newBalance)) ? Number(data.newBalance) : null,
+    playerShort: data?.playerShort || null,
+    playerName: data?.playerName || null,
+    experimental: true,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  return { success: true, id: docRef.id };
+});
+
 exports.adminVerifyAccess = functions.https.onCall(async (_data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Log in with an admin account.");
@@ -295,7 +337,7 @@ exports.adminGetDashboard = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError("invalid-argument", "Unknown provider filter.");
   }
 
-  if (!["vouchers", "payments"].includes(view)) {
+  if (!["vouchers", "payments", "test"].includes(view)) {
     throw new functions.https.HttpsError("invalid-argument", "Unknown dashboard view.");
   }
 

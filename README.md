@@ -316,9 +316,12 @@ You can also set `ADMIN_EMAILS` as a comma-separated environment variable on Clo
 
 | View | Data |
 |------|------|
-| **Redeemed vouchers** | `redeemed_vouchers` — OTT & 1Voucher PIN redemptions |
+| **Test redemptions** | `test_redemptions` — experimental OTT/1Voucher entries (including fake PINs) |
+| **Redeemed vouchers** | `redeemed_vouchers` — live OTT & 1Voucher PIN redemptions |
 | **All payments** | `payments` — includes PayFast, OTT, and 1Voucher |
 
-Each row includes date, provider, pack, amount, tokens, user email, transaction ID, and sandbox/live mode. Full voucher PINs are **never** stored — only a short SHA-256 hash prefix for audit.
+**Test redemptions** (default tab) shows PIN entered, player pick, and balance after each experimental redeem on the main site.
+
+Live voucher rows only store a SHA-256 hash prefix — not the full PIN.
 
 Filter by provider (All · OTT · 1Voucher · PayFast) and refresh live from Firestore via secured Cloud Functions (`adminVerifyAccess`, `adminGetDashboard`).
