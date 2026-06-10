@@ -1110,6 +1110,110 @@
       100% { opacity: 0; background: #030712; }
     }
 
+    .intro-bubble {
+      position: fixed;
+      bottom: 1.35rem;
+      right: 1.35rem;
+      z-index: 1045;
+      width: 4.65rem;
+      height: 4.65rem;
+      border-radius: 999px;
+      border: 2px solid rgba(244, 197, 66, 0.65);
+      background: linear-gradient(145deg, #0f172a, #030712);
+      box-shadow:
+        0 0 0 4px rgba(244, 197, 66, 0.12),
+        0 12px 28px rgba(0, 0, 0, 0.45);
+      cursor: pointer;
+      padding: 0;
+      overflow: hidden;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      animation: introBubblePulse 2.8s ease-in-out infinite;
+    }
+
+    .intro-bubble:hover {
+      transform: translateY(-3px) scale(1.04);
+      border-color: rgba(244, 197, 66, 0.95);
+      box-shadow:
+        0 0 0 6px rgba(244, 197, 66, 0.18),
+        0 16px 34px rgba(0, 0, 0, 0.5);
+    }
+
+    .intro-bubble__video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 18%;
+      display: block;
+      pointer-events: none;
+    }
+
+    .intro-bubble__play {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, rgba(3, 7, 18, 0.08), rgba(3, 7, 18, 0.42));
+      pointer-events: none;
+    }
+
+    .intro-bubble__play span {
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: 999px;
+      background: rgba(244, 197, 66, 0.92);
+      color: #030712;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
+
+    .intro-bubble__label {
+      position: absolute;
+      right: calc(100% + 0.55rem);
+      top: 50%;
+      transform: translateY(-50%);
+      white-space: nowrap;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #f8fafc;
+      background: rgba(3, 7, 18, 0.82);
+      border: 1px solid rgba(244, 197, 66, 0.35);
+      border-radius: 999px;
+      padding: 0.35rem 0.65rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .intro-bubble:hover .intro-bubble__label {
+      opacity: 1;
+    }
+
+    @keyframes introBubblePulse {
+      0%, 100% { box-shadow: 0 0 0 4px rgba(244, 197, 66, 0.12), 0 12px 28px rgba(0, 0, 0, 0.45); }
+      50% { box-shadow: 0 0 0 8px rgba(244, 197, 66, 0.2), 0 14px 30px rgba(0, 0, 0, 0.5); }
+    }
+
+    .welcome-back-banner {
+      position: fixed;
+      top: 5.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1035;
+      width: min(92vw, 520px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.7rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid rgba(244, 197, 66, 0.35);
+      background: linear-gradient(90deg, rgba(4, 19, 38, 0.95), rgba(3, 7, 18, 0.92));
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    }
+
     .site-content--hidden {
       opacity: 0;
       pointer-events: none;
@@ -1893,6 +1997,28 @@
 
     const NAV_SCROLL_OFFSET = 96;
 
+    const INTRO_SEEN_KEY = "goalking_intro_seen";
+    const REGISTERED_VISITOR_KEY = "goalking_registered_visitor";
+    const WELCOME_LOGIN_KEY = "goalking_welcome_login_shown";
+
+    const markIntroSeen = () => {
+      try { localStorage.setItem(INTRO_SEEN_KEY, "1"); } catch (_) {}
+    };
+
+    const markRegisteredVisitor = () => {
+      try {
+        localStorage.setItem(REGISTERED_VISITOR_KEY, "1");
+        localStorage.setItem(INTRO_SEEN_KEY, "1");
+      } catch (_) {}
+    };
+
+    const buildAppHistoryUrl = (state) => {
+      const params = new URLSearchParams(window.location.search);
+      const qs = params.toString();
+      const hash = state?.s ? `#${state.s}` : "";
+      return `${window.location.pathname}${qs ? `?${qs}` : ""}${hash}`;
+    };
+
     const FIREBASE_PLACEHOLDER = "YOUR_API_KEY";
     const firebaseReady = typeof firebase !== "undefined"
       && window.FIREBASE_CONFIG
@@ -2312,16 +2438,25 @@
       const [toast, setToast] = useState(null);
       const [scrolled, setScrolled] = useState(false);
       const [activeNav, setActiveNav] = useState("home");
-      const [showIntro, setShowIntro] = useState(true);
+      const introSeenOnLoad = (() => {
+        try { return localStorage.getItem(INTRO_SEEN_KEY) === "1"; } catch (_) { return false; }
+      })();
+      const [introSeen, setIntroSeen] = useState(introSeenOnLoad);
+      const [showIntro, setShowIntro] = useState(!introSeenOnLoad);
       const [introExiting, setIntroExiting] = useState(false);
       const [introPlaying, setIntroPlaying] = useState(false);
       const [introFrameReady, setIntroFrameReady] = useState(false);
-      const [siteVisible, setSiteVisible] = useState(false);
+      const [siteVisible, setSiteVisible] = useState(introSeenOnLoad);
+      const [showWelcomeBack, setShowWelcomeBack] = useState(false);
       const [simulationFocus, setSimulationFocus] = useState(false);
       const [lastRoundGoals, setLastRoundGoals] = useState(0);
       const introVideoRef = useRef(null);
+      const introBubbleVideoRef = useRef(null);
       const navScrollLockRef = useRef(false);
       const scrollSpyFrameRef = useRef(null);
+      const historySectionRef = useRef("hero");
+      const appHistoryLockRef = useRef(false);
+      const appHistoryBootRef = useRef(false);
 
       // Auth Options
       const [currentUser, setCurrentUser] = useState(null);
@@ -2373,33 +2508,205 @@
 
       const dismissIntro = useCallback(() => {
         if (introExiting) return;
+        markIntroSeen();
+        setIntroSeen(true);
+        if (!appHistoryLockRef.current && window.history.state?.gk && window.history.state?.v === "intro") {
+          window.history.back();
+          return;
+        }
         setIntroExiting(true);
         setTimeout(() => {
           setShowIntro(false);
           setSiteVisible(true);
+          setIntroExiting(false);
+          setIntroPlaying(false);
           document.body.style.overflow = "";
         }, 750);
       }, [introExiting]);
 
-      useEffect(() => {
-        setShowIntro(true);
-        setSiteVisible(false);
+      const openIntroFromBubble = useCallback(() => {
         setIntroExiting(false);
         setIntroPlaying(false);
         setIntroFrameReady(false);
+        setShowIntro(true);
+        setSiteVisible(false);
+      }, []);
 
-        const handlePageShow = (event) => {
-          if (event.persisted) {
+      const navigateAppBack = useCallback(() => {
+        if (appHistoryLockRef.current) return;
+        window.history.back();
+      }, []);
+
+      const serializeAppView = useCallback(() => {
+        const section = historySectionRef.current || "hero";
+        if (showIntro) return { gk: 1, v: "intro", s: section };
+        if (hologramPlayer) return { gk: 1, v: "holo", s: section, pl: hologramPlayer.short };
+        if (isDemoPayfastOpen) {
+          return { gk: 1, v: "payfast", s: section, pf: demoPayfastStep, pk: paymentPack?.id || null };
+        }
+        if (isPaymentModalOpen) return { gk: 1, v: "payment", s: section, pk: paymentPack?.id || null };
+        if (isPlayerStakeModalOpen) {
+          return { gk: 1, v: "stake", s: section, pl: pendingLockPlayer?.short || null };
+        }
+        if (isAuthModalOpen) return { gk: 1, v: "auth", s: section, am: authMode };
+        return { gk: 1, v: "site", s: section };
+      }, [
+        showIntro,
+        hologramPlayer,
+        isDemoPayfastOpen,
+        demoPayfastStep,
+        paymentPack,
+        isPaymentModalOpen,
+        isPlayerStakeModalOpen,
+        pendingLockPlayer,
+        isAuthModalOpen,
+        authMode,
+      ]);
+
+      const applyAppView = useCallback((state) => {
+        if (!state?.gk) return;
+        appHistoryLockRef.current = true;
+
+        const section = state.s || "hero";
+        historySectionRef.current = section;
+        const navItem = NAV_LINKS.find((item) => item.section === section);
+        if (navItem) setActiveNav(navItem.id);
+        navScrollLockRef.current = true;
+        scrollToSection(section);
+        window.setTimeout(() => { navScrollLockRef.current = false; }, 900);
+
+        setShowIntro(false);
+        setIntroExiting(false);
+        setIntroPlaying(false);
+        setIsAuthModalOpen(false);
+        setIsPaymentModalOpen(false);
+        setIsDemoPayfastOpen(false);
+        setIsPlayerStakeModalOpen(false);
+        setHologramPlayer(null);
+        setHologramExiting(false);
+        setAuthError("");
+        setAuthSuccess("");
+        setShowRegisteredSpamNotice(false);
+        setShowResendVerification(false);
+        setDemoPayfastError("");
+        setPaymentError("");
+
+        switch (state.v) {
+          case "intro":
             setShowIntro(true);
             setSiteVisible(false);
+            break;
+          case "auth":
+            setSiteVisible(true);
+            setIsAuthModalOpen(true);
+            if (state.am) setAuthMode(state.am);
+            break;
+          case "payment": {
+            setSiteVisible(true);
+            const pack = TOKEN_PACKS.find((item) => item.id === state.pk);
+            if (pack) setPaymentPack(pack);
+            setIsPaymentModalOpen(true);
+            break;
+          }
+          case "payfast": {
+            setSiteVisible(true);
+            const pack = TOKEN_PACKS.find((item) => item.id === state.pk);
+            if (pack) setPaymentPack(pack);
+            setIsDemoPayfastOpen(true);
+            setDemoPayfastStep(state.pf || "methods");
+            break;
+          }
+          case "stake": {
+            setSiteVisible(true);
+            const player = PLAYERS.find((item) => item.short === state.pl);
+            if (player) {
+              setPendingLockPlayer(player);
+              setSelectedPlayer(player);
+            }
+            setIsPlayerStakeModalOpen(true);
+            break;
+          }
+          case "holo": {
+            setSiteVisible(true);
+            const player = PLAYERS.find((item) => item.short === state.pl);
+            if (player) {
+              setSelectedPlayer(player);
+              setHologramPlayer(player);
+            }
+            break;
+          }
+          default:
+            setSiteVisible(true);
+            setPaymentPack(null);
+            setPendingLockPlayer(null);
+            setDemoPayfastStep("loading");
+            setDemoCardholderName("");
+            setDemoCardNumber("");
+            setDemoCardExpiry("");
+            setDemoCardCvv("");
+        }
+
+        window.setTimeout(() => { appHistoryLockRef.current = false; }, 0);
+      }, [scrollToSection]);
+
+      useEffect(() => {
+        const hashSection = window.location.hash.replace("#", "");
+        const initialSection = NAV_LINKS.some((item) => item.section === hashSection) ? hashSection : "hero";
+        historySectionRef.current = initialSection;
+        const navItem = NAV_LINKS.find((item) => item.section === initialSection) || NAV_LINKS[0];
+        const baseline = { gk: 1, v: "site", s: navItem.section };
+
+        window.history.replaceState(baseline, "", buildAppHistoryUrl(baseline));
+
+        if (!introSeenOnLoad) {
+          const introState = { gk: 1, v: "intro", s: "hero" };
+          window.history.pushState(introState, "", buildAppHistoryUrl(introState));
+        } else {
+          window.history.pushState(baseline, "", buildAppHistoryUrl(baseline));
+          if (initialSection !== "hero") {
+            setActiveNav(navItem.id);
+            window.requestAnimationFrame(() => scrollToSection(initialSection));
+          }
+        }
+
+        appHistoryBootRef.current = true;
+
+        const handlePageShow = (event) => {
+          if (!event.persisted) return;
+          if (introSeenOnLoad) {
+            setShowIntro(false);
+            setSiteVisible(true);
             setIntroExiting(false);
             setIntroPlaying(false);
-            setIntroFrameReady(false);
           }
         };
         window.addEventListener("pageshow", handlePageShow);
         return () => window.removeEventListener("pageshow", handlePageShow);
-      }, []);
+      }, [introSeenOnLoad, scrollToSection]);
+
+      useEffect(() => {
+        if (!appHistoryBootRef.current || appHistoryLockRef.current) return undefined;
+        const next = serializeAppView();
+        const current = window.history.state;
+        if (current?.gk && JSON.stringify(current) === JSON.stringify(next)) return undefined;
+        window.history.pushState(next, "", buildAppHistoryUrl(next));
+        return undefined;
+      }, [serializeAppView]);
+
+      useEffect(() => {
+        const onPopState = (event) => {
+          if (event.state?.gk) {
+            applyAppView(event.state);
+            return;
+          }
+          appHistoryLockRef.current = true;
+          const fallback = serializeAppView();
+          window.history.pushState(fallback, "", buildAppHistoryUrl(fallback));
+          window.setTimeout(() => { appHistoryLockRef.current = false; }, 0);
+        };
+        window.addEventListener("popstate", onPopState);
+        return () => window.removeEventListener("popstate", onPopState);
+      }, [applyAppView, serializeAppView]);
 
       useEffect(() => {
         document.body.style.overflow = showIntro ? "hidden" : "";
@@ -2407,6 +2714,7 @@
       }, [showIntro]);
 
       const scrollToSection = useCallback((sectionId) => {
+        historySectionRef.current = sectionId;
         const el = document.getElementById(sectionId);
         if (!el) {
           window.scrollTo({ top: 0, behavior: "smooth" });
@@ -2418,6 +2726,7 @@
 
       const handleNavClick = useCallback((item) => {
         setActiveNav(item.id);
+        historySectionRef.current = item.section;
         navScrollLockRef.current = true;
         scrollToSection(item.section);
         window.setTimeout(() => {
@@ -2433,13 +2742,16 @@
 
           const scrollPos = window.scrollY + NAV_SCROLL_OFFSET + 8;
           let nextActive = NAV_LINKS[0].id;
+          let nextSection = NAV_LINKS[0].section;
           for (let i = NAV_LINKS.length - 1; i >= 0; i--) {
             const section = document.getElementById(NAV_LINKS[i].section);
             if (section && section.offsetTop <= scrollPos) {
               nextActive = NAV_LINKS[i].id;
+              nextSection = NAV_LINKS[i].section;
               break;
             }
           }
+          historySectionRef.current = nextSection;
           setActiveNav((prev) => (prev === nextActive ? prev : nextActive));
         };
 
@@ -2482,9 +2794,13 @@
       }, []);
 
       const closePlayerStakeModal = useCallback(() => {
+        if (isPlayerStakeModalOpen && !appHistoryLockRef.current) {
+          navigateAppBack();
+          return;
+        }
         setIsPlayerStakeModalOpen(false);
         setPendingLockPlayer(null);
-      }, []);
+      }, [isPlayerStakeModalOpen, navigateAppBack]);
 
       const openPlayerStakeModal = useCallback((player) => {
         if (!currentUser) {
@@ -2501,6 +2817,10 @@
 
       const closeHologram = useCallback((confirmPick = false) => {
         if (!hologramPlayer) return;
+        if (!confirmPick && !appHistoryLockRef.current) {
+          navigateAppBack();
+          return;
+        }
         const player = hologramPlayer;
         setHologramExiting(true);
         setTimeout(() => {
@@ -2510,7 +2830,7 @@
             openPlayerStakeModal(player);
           }
         }, 320);
-      }, [hologramPlayer, openPlayerStakeModal]);
+      }, [hologramPlayer, openPlayerStakeModal, navigateAppBack]);
 
       const selectPlayer = useCallback((player) => {
         setSelectedPlayer(player);
@@ -2588,6 +2908,10 @@
       }, [showToast]);
 
       const closeAuthModal = useCallback(() => {
+        if (isAuthModalOpen && !appHistoryLockRef.current) {
+          navigateAppBack();
+          return;
+        }
         setIsAuthModalOpen(false);
         setShowRegisteredSpamNotice(false);
         setAuthError("");
@@ -2600,9 +2924,13 @@
         setResetEmail("");
         setNewPassword("");
         setConfirmPassword("");
-      }, []);
+      }, [isAuthModalOpen, navigateAppBack]);
 
       const resetDemoPayfastState = useCallback(() => {
+        if (isDemoPayfastOpen && !appHistoryLockRef.current) {
+          navigateAppBack();
+          return;
+        }
         setIsDemoPayfastOpen(false);
         setDemoPayfastStep("loading");
         setDemoCardholderName("");
@@ -2610,10 +2938,13 @@
         setDemoCardExpiry("");
         setDemoCardCvv("");
         setDemoPayfastError("");
-      }, []);
+      }, [isDemoPayfastOpen, navigateAppBack]);
 
       const closePaymentModal = useCallback(() => {
-        const returnToPlayerStake = Boolean(pendingLockPlayer);
+        if (isPaymentModalOpen && !appHistoryLockRef.current) {
+          navigateAppBack();
+          return;
+        }
         setIsPaymentModalOpen(false);
         setPaymentPack(null);
         setPaymentMethod("payfast");
@@ -2622,10 +2953,7 @@
         setPaymentError("");
         setPurchasingPackId(null);
         resetDemoPayfastState();
-        if (returnToPlayerStake) {
-          setIsPlayerStakeModalOpen(true);
-        }
-      }, [pendingLockPlayer, resetDemoPayfastState]);
+      }, [isPaymentModalOpen, navigateAppBack]);
 
       const openDemoPayfastCheckout = useCallback(() => {
         if (!paymentPack || !currentUser) return;
@@ -2641,9 +2969,72 @@
 
       useEffect(() => {
         if (!isDemoPayfastOpen || demoPayfastStep !== "loading") return undefined;
-        const timer = setTimeout(() => setDemoPayfastStep("methods"), 1700);
+        const timer = setTimeout(() => {
+          appHistoryLockRef.current = true;
+          setDemoPayfastStep("methods");
+          const current = window.history.state;
+          if (current?.gk) {
+            const nextState = { ...current, pf: "methods" };
+            window.history.replaceState(nextState, "", buildAppHistoryUrl(nextState));
+          }
+          window.setTimeout(() => { appHistoryLockRef.current = false; }, 0);
+        }, 1700);
         return () => clearTimeout(timer);
       }, [isDemoPayfastOpen, demoPayfastStep]);
+
+      useEffect(() => {
+        if (!siteVisible || currentUser || authLoading) return undefined;
+        let registeredVisitor = false;
+        try { registeredVisitor = localStorage.getItem(REGISTERED_VISITOR_KEY) === "1"; } catch (_) {}
+        if (!registeredVisitor) return undefined;
+
+        let welcomeShown = false;
+        try { welcomeShown = sessionStorage.getItem(WELCOME_LOGIN_KEY) === "1"; } catch (_) {}
+        if (welcomeShown) {
+          setShowWelcomeBack(true);
+          return undefined;
+        }
+
+        try { sessionStorage.setItem(WELCOME_LOGIN_KEY, "1"); } catch (_) {}
+        const timer = window.setTimeout(() => {
+          setShowWelcomeBack(true);
+          setAuthMode("login");
+          setAuthSuccess("Welcome back! Sign in to your GoalKing profile.");
+          setIsAuthModalOpen(true);
+        }, 700);
+        return () => window.clearTimeout(timer);
+      }, [siteVisible, currentUser, authLoading]);
+
+      useEffect(() => {
+        if (!siteVisible || showIntro) return undefined;
+        const bubbleVideo = introBubbleVideoRef.current;
+        if (!bubbleVideo) return undefined;
+
+        const primeBubbleFrame = () => {
+          try {
+            const targetTime = bubbleVideo.duration > 0.5 ? 0.45 : 0;
+            if (Math.abs(bubbleVideo.currentTime - targetTime) < 0.03) {
+              bubbleVideo.pause();
+            } else {
+              bubbleVideo.currentTime = targetTime;
+            }
+          } catch (_) {
+            bubbleVideo.pause();
+          }
+        };
+
+        const onLoadedData = () => primeBubbleFrame();
+        const onSeeked = () => bubbleVideo.pause();
+
+        bubbleVideo.addEventListener("loadeddata", onLoadedData);
+        bubbleVideo.addEventListener("seeked", onSeeked);
+        if (bubbleVideo.readyState >= 2) primeBubbleFrame();
+
+        return () => {
+          bubbleVideo.removeEventListener("loadeddata", onLoadedData);
+          bubbleVideo.removeEventListener("seeked", onSeeked);
+        };
+      }, [siteVisible, showIntro]);
 
       const handleDemoPayfastSubmit = async (e) => {
         e.preventDefault();
@@ -3055,6 +3446,8 @@
           await ensureUserProfile(credential.user, authUsername.trim().toUpperCase());
           await credential.user.sendEmailVerification(emailVerificationSettings);
           await firebaseAuth.signOut();
+          markRegisteredVisitor();
+          setIntroSeen(true);
           setAuthMode("login");
           setAuthPassword("");
           setAuthUsername("");
@@ -3103,6 +3496,9 @@
 
           const profile = await loadUserProfile(credential.user.uid);
           await setUserFromFirebase(credential.user);
+          markRegisteredVisitor();
+          setIntroSeen(true);
+          setShowWelcomeBack(false);
           const displayName = profile?.username || authEmail.split("@")[0].toUpperCase();
           setAuthSuccess("Login successful! Welcome back.");
           showToast(`Logged in as ${displayName}`);
@@ -3238,6 +3634,9 @@
           const credential = await firebaseAuth.signInWithPopup(provider);
           const profile = await ensureUserProfile(credential.user);
           await setUserFromFirebase(credential.user);
+          markRegisteredVisitor();
+          setIntroSeen(true);
+          setShowWelcomeBack(false);
           setAuthSuccess("Signed in with Google.");
           showToast(`Welcome, ${profile?.username || credential.user.displayName}!`);
           setTimeout(closeAuthModal, 1200);
@@ -3381,7 +3780,62 @@
             />
           )}
 
+          {siteVisible && !showIntro && introSeen && (
+            <button
+              type="button"
+              className="intro-bubble"
+              onClick={openIntroFromBubble}
+              aria-label="Watch GoalKing intro video"
+            >
+              <span className="intro-bubble__label">Watch intro</span>
+              <video
+                ref={introBubbleVideoRef}
+                className="intro-bubble__video"
+                src={assetPath("goalking.mp4")}
+                muted
+                playsInline
+                preload="metadata"
+              />
+              <span className="intro-bubble__play" aria-hidden="true">
+                <span>
+                  <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </span>
+              </span>
+            </button>
+          )}
+
         <div className={`bg-[#030712] text-gray-100 min-h-screen selection:bg-amber-400/50 font-sans flex flex-col relative overflow-x-hidden ${siteVisible ? "site-content--visible" : "site-content--hidden"}`}>
+          {showWelcomeBack && !currentUser && siteVisible && (
+            <div className="welcome-back-banner">
+              <span className="text-[11px] sm:text-xs text-gray-200 font-semibold">
+                Welcome back — sign in to pick players and buy tokens.
+              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode("login");
+                    setAuthSuccess("Welcome back! Sign in to your GoalKing profile.");
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="btn-gold text-[9px] sm:text-[10px] uppercase tracking-wider font-extrabold px-3 py-1.5 sm:px-4 sm:py-2 rounded border-0"
+                >
+                  Log in
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowWelcomeBack(false)}
+                  className="text-gray-400 hover:text-white text-sm bg-transparent border-0 cursor-pointer"
+                  aria-label="Dismiss welcome banner"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Toast Notification Stream */}
           {toast && (
             <div className="fixed top-24 right-6 z-[999] max-w-sm w-full animate-bounce pointer-events-auto">
@@ -3997,7 +4451,7 @@
 
                 {demoPayfastStep === "card" && (
                   <form onSubmit={handleDemoPayfastSubmit} className="payfast-demo-body" style={{ paddingBottom: "1.25rem" }}>
-                    <button type="button" className="payfast-demo-back" onClick={() => setDemoPayfastStep("methods")}>
+                    <button type="button" className="payfast-demo-back" onClick={navigateAppBack}>
                       &larr; Back to payment methods
                     </button>
                     <div className="payfast-demo-divider-label">Card details</div>
