@@ -11,6 +11,10 @@
       if (window.location.hostname.endsWith("github.io") && path.indexOf("/-/") === 0) {
         base = "/-/";
       }
+      if (/^game\.playmzansi\.online$/i.test(location.hostname) && path.indexOf("/game") !== 0) {
+        location.replace(base + "game/" + location.search);
+        return;
+      }
       var tag = document.createElement("base");
       tag.href = base;
       document.head.appendChild(tag);
@@ -5809,6 +5813,7 @@
             <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between text-[10px] font-bold text-gray-500 uppercase tracking-widest gap-4 relative z-10">
               <span>© 2026 FIFA WORLD CUP GOALKING . ALL RIGHTS RESERVED.</span>
               <div className="flex flex-wrap gap-6 justify-center md:justify-end">
+                <a href={`${window.__ASSET_BASE__ || "/"}game/`} className="hover:text-amber-400">HOW TO PLAY</a>
                 <a href="mailto:support@playmzansi.online" className="hover:text-amber-400">SUPPORT</a>
                 <a href={LEGAL_LINKS.terms} target="_blank" rel="noopener noreferrer" className="hover:text-white">TERMS & CONDITIONS</a>
                 <a href={LEGAL_LINKS.privacy} target="_blank" rel="noopener noreferrer" className="hover:text-white">PRIVACY POLICY</a>

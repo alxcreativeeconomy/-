@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How GoalKing Works · Play Mzansi FIFA World Cup 2026</title>
+  <meta name="description" content="Learn how GoalKing works — pick your striker, lock predictions with validation coins, and win cash, vehicles, shirts, merchandise and more." />
+  <link rel="icon" type="image/svg+xml" href="../logo.svg" />
+  <link rel="apple-touch-icon" href="../logo.svg" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --gold: #f4c542;
+      --gold-dim: #c8991e;
+      --navy: #030712;
+      --panel: #041326;
+      --green: #007a4d;
+      --yellow: #ffb612;
+      --red: #de3831;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
+
+    body {
+      font-family: "Barlow", system-ui, sans-serif;
+      background: var(--navy);
+      color: #e5e7eb;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .font-bebas { font-family: "Bebas Neue", sans-serif; }
+
+    a { color: inherit; text-decoration: none; }
+
+    .mzansi-stripe {
+      height: 4px;
+      background: linear-gradient(90deg, var(--green) 0%, var(--green) 20%, var(--yellow) 20%, var(--yellow) 40%, #000 40%, #000 55%, var(--green) 55%, var(--green) 75%, var(--red) 75%, var(--red) 90%, #002395 90%, #002395 100%);
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.85rem 1.25rem;
+      background: rgba(3, 7, 18, 0.92);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      min-width: 0;
+    }
+
+    .nav-brand img { width: 2.25rem; height: 2.25rem; border-radius: 999px; flex-shrink: 0; }
+
+    .nav-brand span {
+      font-family: "Bebas Neue", sans-serif;
+      font-size: 1.35rem;
+      letter-spacing: 0.04em;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .nav-brand em { color: var(--gold); font-style: normal; }
+
+    .nav-links {
+      display: none;
+      gap: 1.25rem;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+
+    .nav-links a:hover { color: var(--gold); }
+
+    .btn-gold {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      background: linear-gradient(90deg, var(--gold), var(--gold-dim));
+      color: #030712;
+      font-weight: 800;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.65rem 1.1rem;
+      border-radius: 0.5rem;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 4px 18px rgba(244, 197, 66, 0.25);
+    }
+
+    .btn-gold:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(244, 197, 66, 0.35);
+    }
+
+    .btn-outline {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.65rem 1.1rem;
+      border-radius: 0.5rem;
+      transition: border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 4rem 1.5rem 5rem;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 15% 20%, rgba(0, 122, 77, 0.2), transparent 55%),
+        radial-gradient(ellipse at 85% 70%, rgba(244, 197, 66, 0.12), transparent 50%),
+        linear-gradient(180deg, #030712 0%, #061226 100%);
+      z-index: 0;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      max-width: 72rem;
+      margin: 0 auto;
+      display: grid;
+      gap: 2.5rem;
+      align-items: center;
+    }
+
+    @media (min-width: 900px) {
+      .hero-inner { grid-template-columns: 1.15fr 0.85fr; }
+      .nav-links { display: flex; }
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      background: rgba(0, 122, 77, 0.18);
+      border: 1px solid rgba(0, 122, 77, 0.4);
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--yellow);
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 {
+      font-family: "Bebas Neue", sans-serif;
+      font-size: clamp(2.8rem, 7vw, 4.8rem);
+      line-height: 0.95;
+      letter-spacing: 0.02em;
+      color: #fff;
+      text-transform: uppercase;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(90deg, var(--yellow), #fff, var(--green));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-lead {
+      margin-top: 1rem;
+      max-width: 36rem;
+      color: #9ca3af;
+      font-size: 1rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1.75rem;
+    }
+
+    .hero-card {
+      background: rgba(4, 19, 38, 0.88);
+      border: 1px solid rgba(244, 197, 66, 0.2);
+      border-radius: 1rem;
+      padding: 1.35rem;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    }
+
+    .hero-card h2 {
+      font-family: "Bebas Neue", sans-serif;
+      font-size: 1.35rem;
+      letter-spacing: 0.06em;
+      color: var(--gold);
+      margin-bottom: 0.75rem;
+    }
+
+    .hero-card ul { list-style: none; display: grid; gap: 0.55rem; }
+
+    .hero-card li {
+      display: flex;
+      gap: 0.6rem;
+      font-size: 0.88rem;
+      color: #cbd5e1;
+    }
+
+    .hero-card li strong { color: #fff; font-weight: 700; }
+
+    .hero-card li::before {
+      content: "✓";
+      color: var(--gold);
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    .section {
+      padding: 4.5rem 1.5rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .section-inner { max-width: 72rem; margin: 0 auto; }
+
+    .section-head {
+      text-align: center;
+      max-width: 40rem;
+      margin: 0 auto 2.75rem;
+    }
+
+    .section-head .label {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    .section-head h2 {
+      font-family: "Bebas Neue", sans-serif;
+      font-size: clamp(2.2rem, 5vw, 3.2rem);
+      color: #fff;
+      margin-top: 0.35rem;
+      letter-spacing: 0.03em;
+    }
+
+    .section-head p {
+      margin-top: 0.65rem;
+      color: #9ca3af;
+      font-size: 0.95rem;
+    }
+
+    .steps {
+      display: grid;
+      gap: 1.25rem;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .step {
+      background: linear-gradient(180deg, rgba(9, 21, 43, 0.95), rgba(3, 7, 18, 0.98));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 1rem;
+      padding: 1.35rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .step-num {
+      font-family: "Bebas Neue", sans-serif;
+      font-size: 2.5rem;
+      line-height: 1;
+      color: rgba(244, 197, 66, 0.18);
+      position: absolute;
+      top: 0.5rem;
+      right: 0.75rem;
+    }
+
+    .step h3 {
+      font-family: "Bebas Neue", sans-serif;
+      font-size: 1.45rem;
+      color: #fff;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.5rem;
+    }
+
+    .step p { font-size: 0.88rem; color: #94a3b8; }
+
+    .meaning-grid {
+      display: grid;
+      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+
+    .meaning-card {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 1rem;
+      padding: 1.5rem;
+    }
+
+    .meaning-card h3 {
+      font-family: "Bebas Neue", sans-serif;
+      font-size: 1.5rem;
+      color: var(--gold);
+      margin-bottom: 0.65rem;
+    }
+
+    .meaning-card p { color: #94a3b8; font-size: 0.92rem; }
+
+    .grand-prizes {
+      display: grid;
+      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    .prize-card {
+      background: #030a1a;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 1rem;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+    }
+
+    .prize-card-body { padding: 1.35rem; }
+
+    .prize-tag {
+      display: inline-block;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+      background: rgba(244, 197, 66, 0.1);
+      border: 1px solid rgba(244, 197, 66, 0.3);
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .prize-card h3 {
+      font-family: "Bebas Neue", sans-serif;
+      font-size: 2rem;
+      color: #fff;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.5rem;
+    }
+
+    .prize-card p { font-size: 0.88rem; color: #94a3b8; }
+
+    .prize-img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
+    }
+
+    .giveaway-grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
+    .giveaway-item {
+      background: linear-gradient(145deg, rgba(9, 21, 43, 0.9), rgba(3, 7, 18, 0.95));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 0.85rem;
+      padding: 1.15rem 1rem;
+      text-align: center;
+      transition: transform 0.22s ease, border-color 0.22s ease;
+    }
+
+    .giveaway-item:hover {
+      transform: translateY(-3px);
+      border-color: rgba(244, 197, 66, 0.35);
+    }
+
+    .giveaway-icon {
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+      line-height: 1;
+    }
+
+    .giveaway-item h4 {
+      font-family: "Bebas Neue", sans-serif;
+      font-size: 1.15rem;
+      color: #fff;
+      letter-spacing: 0.04em;
+    }
+
+    .giveaway-item p {
+      font-size: 0.72rem;
+      color: #64748b;
+      margin-top: 0.25rem;
+      line-height: 1.4;
+    }
+
+    .stage-callout {
+      margin-top: 2rem;
+      text-align: center;
+      padding: 1.75rem 1.5rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(244, 197, 66, 0.25);
+      background: linear-gradient(180deg, rgba(244, 197, 66, 0.08), rgba(3, 7, 18, 0.6));
+    }
+
+    .stage-callout p {
+      font-family: "Bebas Neue", sans-serif;
+      font-size: clamp(1.35rem, 3vw, 1.85rem);
+      color: #fff;
+      letter-spacing: 0.03em;
+      line-height: 1.25;
+    }
+
+    .stage-callout em { color: var(--gold); font-style: normal; }
+
+    .packs {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    .pack {
+      border-radius: 0.85rem;
+      padding: 1.25rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: linear-gradient(180deg, #09152b, #02050c);
+    }
+
+    .pack.featured {
+      border-color: var(--gold);
+      box-shadow: 0 12px 30px rgba(244, 197, 66, 0.12);
+    }
+
+    .pack-tier {
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .pack h4 {
+      font-family: "Bebas Neue", sans-serif;
+      font-size: 1.5rem;
+      color: #fff;
+      margin: 0.35rem 0;
+    }
+
+    .pack-price {
+      font-family: "Bebas Neue", sans-serif;
+      font-size: 1.75rem;
+      color: var(--gold);
+    }
+
+    .pack p { font-size: 0.78rem; color: #94a3b8; margin-top: 0.5rem; }
+
+    .faq { max-width: 44rem; margin: 0 auto; display: grid; gap: 0.75rem; }
+
+    .faq details {
+      background: rgba(4, 19, 38, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 0.75rem;
+      padding: 1rem 1.15rem;
+    }
+
+    .faq summary {
+      cursor: pointer;
+      font-weight: 700;
+      color: #fff;
+      list-style: none;
+    }
+
+    .faq summary::-webkit-details-marker { display: none; }
+
+    .faq p { margin-top: 0.65rem; font-size: 0.88rem; color: #94a3b8; }
+
+    .cta-band {
+      margin: 0 1.5rem 4rem;
+      max-width: 72rem;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 2.5rem 1.5rem;
+      border-radius: 1.25rem;
+      text-align: center;
+      background:
+        linear-gradient(135deg, rgba(0, 122, 77, 0.25), rgba(244, 197, 66, 0.12)),
+        #041326;
+      border: 1px solid rgba(244, 197, 66, 0.25);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+    }
+
+    .cta-band h2 {
+      font-family: "Bebas Neue", sans-serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      color: #fff;
+      letter-spacing: 0.04em;
+    }
+
+    .cta-band p { color: #94a3b8; margin: 0.75rem auto 1.5rem; max-width: 32rem; }
+
+    .footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      color: #64748b;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.25rem;
+      margin-top: 0.85rem;
+    }
+
+    .footer-links a:hover { color: var(--gold); }
+
+    .sponsor-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-top: 2rem;
+      opacity: 0.55;
+    }
+
+    .sponsor-row img { height: 1.5rem; width: auto; filter: grayscale(1) brightness(1.4); }
+  </style>
+</head>
+<body>
+  <div class="mzansi-stripe"></div>
+
+  <nav class="nav">
+    <a class="nav-brand" href="../">
+      <img src="../logo.svg" alt="GoalKing" width="36" height="36" />
+      <span>GOAL<em>KING</em> GUIDE</span>
+    </a>
+    <div class="nav-links">
+      <a href="#meaning">Meaning</a>
+      <a href="#how">How to play</a>
+      <a href="#prizes">Prizes</a>
+      <a href="#coins">Coins</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a class="btn-gold" href="../">Play now</a>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-inner">
+      <div>
+        <div class="eyebrow">
+          <img src="https://flagcdn.com/w20/za.png" alt="" width="16" height="12" style="border-radius:2px" />
+          Play Mzansi · FIFA World Cup 2026™
+        </div>
+        <h1>Understand <span>GoalKing</span></h1>
+        <p class="hero-lead">
+          GoalKing is South Africa's World Cup prediction arena. Back a striker or winger, lock your pick with validation coins, and compete for verified cash, vehicles, shirts, accessories, hotel stays and official merchandise.
+        </p>
+        <div class="hero-actions">
+          <a class="btn-gold" href="../">Enter the draft room</a>
+          <a class="btn-outline" href="#how">See how it works</a>
+        </div>
+      </div>
+      <div class="hero-card">
+        <h2>What you're playing for</h2>
+        <ul>
+          <li><strong>R100,000</strong> grand cash prize for the verified SA champion</li>
+          <li><strong>Hyundai vehicle</strong> with official key handover nationwide</li>
+          <li><strong>Group-stage draws</strong> after every World Cup group stage</li>
+          <li><strong>Shirts, jerseys &amp; accessories</strong> from partner giveaways</li>
+          <li><strong>Luxury hotel stays</strong> &amp; VIP finals sweepstakes access</li>
+        </ul>
+      </div>
+    </div>
+  </header>
+
+  <section class="section" id="meaning">
+    <div class="section-inner">
+      <div class="section-head">
+        <p class="label">The meaning</p>
+        <h2>Why GoalKing exists</h2>
+        <p>From Mzansi to the World Cup — a fan-first prediction game built for South African supporters who want skin in the game.</p>
+      </div>
+      <div class="meaning-grid">
+        <article class="meaning-card">
+          <h3>Fan identity</h3>
+          <p>GoalKing celebrates South African football culture. You are not just watching — you are staking belief in the players who will define World Cup 2026.</p>
+        </article>
+        <article class="meaning-card">
+          <h3>Verified predictions</h3>
+          <p>Validation coins turn a casual pick into an official prediction card. Verified entries qualify for sweepstakes, merchandise draws and grand prizes.</p>
+        </article>
+        <article class="meaning-card">
+          <h3>Fair &amp; transparent</h3>
+          <p>Every verified card holder has a documented entry path. Winners are announced after group stages and at major milestones with official presentation.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="how">
+    <div class="section-inner">
+      <div class="section-head">
+        <p class="label">How to play</p>
+        <h2>Four steps to compete</h2>
+        <p>From sign-up to sweepstakes entry — the full GoalKing journey on playmzansi.online.</p>
+      </div>
+      <div class="steps">
+        <article class="step">
+          <span class="step-num">01</span>
+          <h3>Create profile</h3>
+          <p>Register your GoalKing profile with email or Google. Verify your account to unlock the full draft room.</p>
+        </article>
+        <article class="step">
+          <span class="step-num">02</span>
+          <h3>Pick your player</h3>
+          <p>Choose a striker or winger from the official contender pool — Mbappé, Yamal, Salah, Ronaldo and more.</p>
+        </article>
+        <article class="step">
+          <span class="step-num">03</span>
+          <h3>Buy validation coins</h3>
+          <p>Purchase a coin pack via PayFast, OTT or 1Voucher. Coins verify your prediction and unlock sweepstakes entries.</p>
+        </article>
+        <article class="step">
+          <span class="step-num">04</span>
+          <h3>Lock &amp; compete</h3>
+          <p>Validate your pick before kickoff. Your card enters group-stage draws and grand prize pools automatically.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="prizes">
+    <div class="section-inner">
+      <div class="section-head">
+        <p class="label">Official rewards</p>
+        <h2>Grand prizes &amp; giveaways</h2>
+        <p>Every verified prediction card qualifies for prize draws — from life-changing grand prizes to shirts, accessories and hospitality rewards.</p>
+      </div>
+
+      <div class="grand-prizes">
+        <article class="prize-card">
+          <div class="prize-card-body">
+            <span class="prize-tag">Grand cash prize</span>
+            <h3>R100,000 Winner</h3>
+            <p>Verified sweepstakes champion receives R100,000 via official GoalKing presentation cheque, deposited to a nominated South African bank account.</p>
+          </div>
+          <img class="prize-img" src="../cashwinner.jpg" alt="GoalKing R100,000 cash prize winner" loading="lazy" decoding="async" />
+        </article>
+        <article class="prize-card">
+          <div class="prize-card-body">
+            <span class="prize-tag">Vehicle prize</span>
+            <h3>Hyundai Car Winner</h3>
+            <p>A brand-new Hyundai prize vehicle with official key handover, registered and delivered anywhere in South Africa.</p>
+          </div>
+          <img class="prize-img" src="../carwinner.jpg" alt="GoalKing Hyundai vehicle winner" loading="lazy" decoding="async" />
+        </article>
+      </div>
+
+      <div class="section-head" style="margin-top:3rem;margin-bottom:1.75rem">
+        <p class="label">Group stage &amp; merchandise</p>
+        <h2>Shirts, accessories &amp; more</h2>
+        <p>Winners announced after every group stage — multiple draws for verified card holders.</p>
+      </div>
+
+      <div class="giveaway-grid">
+        <div class="giveaway-item">
+          <div class="giveaway-icon">👕</div>
+          <h4>Official shirts</h4>
+          <p>Authentic national &amp; club jerseys from partner networks</p>
+        </div>
+        <div class="giveaway-item">
+          <div class="giveaway-icon">🧣</div>
+          <h4>Scarves &amp; accessories</h4>
+          <p>Limited fan scarves, caps, balls and matchday kits</p>
+        </div>
+        <div class="giveaway-item">
+          <div class="giveaway-icon">🎽</div>
+          <h4>Training gear</h4>
+          <p>Adidas &amp; Nike training tops from sponsor giveaways</p>
+        </div>
+        <div class="giveaway-item">
+          <div class="giveaway-icon">🏨</div>
+          <h4>Luxury hotel stays</h4>
+          <p>Premium hospitality packages for major match weeks</p>
+        </div>
+        <div class="giveaway-item">
+          <div class="giveaway-icon">🎟️</div>
+          <h4>VIP experiences</h4>
+          <p>Finals sweepstakes access &amp; official viewing events</p>
+        </div>
+        <div class="giveaway-item">
+          <div class="giveaway-icon">📺</div>
+          <h4>Tech &amp; fan gear</h4>
+          <p>Hisense, Lenovo &amp; partner electronics giveaways</p>
+        </div>
+        <div class="giveaway-item">
+          <div class="giveaway-icon">🍔</div>
+          <h4>Matchday hampers</h4>
+          <p>Coca-Cola, McDonald's &amp; Budweiser fan bundles</p>
+        </div>
+        <div class="giveaway-item">
+          <div class="giveaway-icon">✈️</div>
+          <h4>Travel vouchers</h4>
+          <p>Qatar Airways &amp; regional travel prize draws</p>
+        </div>
+      </div>
+
+      <div class="stage-callout">
+        <p>Winners announced after <em>every group stage</em> with multiple prize draws and official merchandise giveaways for verified prediction card holders.</p>
+      </div>
+
+      <div class="sponsor-row" aria-hidden="true">
+        <img src="../sponsors/adidas.svg" alt="" />
+        <img src="../sponsors/nike.svg" alt="" />
+        <img src="../sponsors/hyundai.svg" alt="" />
+        <img src="../sponsors/cocacola.svg" alt="" />
+        <img src="../sponsors/visa.svg" alt="" />
+        <img src="../sponsors/fifa.svg" alt="" />
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="coins">
+    <div class="section-inner">
+      <div class="section-head">
+        <p class="label">Validation coins</p>
+        <h2>Coin packs explained</h2>
+        <p>Coins verify your prediction and determine your sweepstakes weight. Buy packs on the main site when you lock a player.</p>
+      </div>
+      <div class="packs">
+        <article class="pack">
+          <span class="pack-tier" style="color:#cd7f32">Bronze tier</span>
+          <h4>Bronze pack</h4>
+          <div class="pack-price">R5</div>
+          <p>5 tokens · standard single sweepstakes entry for initial group-stage draws.</p>
+        </article>
+        <article class="pack">
+          <span class="pack-tier" style="color:#c0c0c0">Silver tier</span>
+          <h4>Silver pack</h4>
+          <div class="pack-price">R25</div>
+          <p>25 tokens · increased draw weight and match alert access.</p>
+        </article>
+        <article class="pack featured">
+          <span class="pack-tier" style="color:#f4c542">Gold tier · most popular</span>
+          <h4>Gold pack</h4>
+          <div class="pack-price">R60</div>
+          <p>60 tokens · premium prediction logs and enhanced merchandise draw entries.</p>
+        </article>
+        <article class="pack">
+          <span class="pack-tier" style="color:#e5e4e2">Platinum tier</span>
+          <h4>Platinum pack</h4>
+          <div class="pack-price">R150</div>
+          <p>150 tokens · ultimate VIP finals sweepstakes access ticket.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="faq">
+    <div class="section-inner">
+      <div class="section-head">
+        <p class="label">FAQ</p>
+        <h2>Common questions</h2>
+      </div>
+      <div class="faq">
+        <details>
+          <summary>What is a validation coin?</summary>
+          <p>A validation coin is a digital token you purchase to verify your player prediction. Verified cards enter official GoalKing sweepstakes and merchandise draws.</p>
+        </details>
+        <details>
+          <summary>How do I pay for coin packs?</summary>
+          <p>On playmzansi.online you can pay via PayFast (card/EFT), OTT voucher (12-digit PIN) or 1Voucher (16-digit PIN). Tokens credit to your balance after successful payment.</p>
+        </details>
+        <details>
+          <summary>When are group-stage winners announced?</summary>
+          <p>After every FIFA World Cup 2026 group stage. Multiple prize draws run for verified prediction card holders including shirts, accessories and hospitality prizes.</p>
+        </details>
+        <details>
+          <summary>Who can win the R100,000 and Hyundai prizes?</summary>
+          <p>Verified GoalKing sweepstakes champions with official prediction cards. Grand prizes are presented with documented handover and deposited or delivered within South Africa.</p>
+        </details>
+        <details>
+          <summary>Where do I actually play?</summary>
+          <p>This page explains the game. The live draft room, player picks and checkout live at <a href="../" style="color:var(--gold)">playmzansi.online</a>.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <div class="cta-band">
+    <h2>Ready to pick your champion?</h2>
+    <p>Head to the main GoalKing site, choose your striker or winger, and lock your prediction with validation coins.</p>
+    <a class="btn-gold" href="../" style="font-size:0.75rem;padding:0.85rem 1.5rem">Play at playmzansi.online</a>
+  </div>
+
+  <footer class="footer">
+    <p>© 2026 FIFA World Cup GoalKing · Play Mzansi</p>
+    <div class="footer-links">
+      <a href="../">Play now</a>
+      <a href="mailto:support@playmzansi.online">Support</a>
+      <a href="https://www.termsfeed.com/live/6b0ab06a-2266-440b-8126-626df1996291" target="_blank" rel="noopener">Terms</a>
+      <a href="https://www.termsfeed.com/live/54f10004-2aca-4cb3-8e36-27c8aed5aab1" target="_blank" rel="noopener">Privacy</a>
+    </div>
+  </footer>
+</body>
+</html>

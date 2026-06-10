@@ -41,6 +41,9 @@ In Cloudflare → **DNS** → **Records**, add:
 |------|------|---------|-------|
 | CNAME | `@` | `alxcreativeeconomy.github.io` | Proxied (orange cloud) |
 | CNAME | `www` | `alxcreativeeconomy.github.io` | Proxied (orange cloud) |
+| CNAME | `game` | `alxcreativeeconomy.github.io` | Proxied (orange cloud) |
+
+**Game explainer subdomain:** `game.playmzansi.online` serves the how-to-play guide at `/game/`. The main site auto-redirects `game.playmzansi.online` → `/game/`. You can also open it at `https://playmzansi.online/game/`.
 
 GitHub also accepts A records if CNAME on apex causes issues — use all four GitHub IPs with **DNS only** (grey cloud) for `@` only:
 
@@ -75,6 +78,19 @@ Firebase Console → **goalking-2026** → **Authentication** → **Settings** �
 
 - `playmzansi.online`
 - `www.playmzansi.online`
+- `game.playmzansi.online` (optional — game guide only)
+
+### Game guide site (`/game/`)
+
+Static explainer page at `game/index.html` — built to `dist/game/` on deploy.
+
+Covers:
+- What GoalKing means for SA fans
+- How to play (4 steps)
+- Grand prizes (R100,000 cash, Hyundai vehicle)
+- Group-stage giveaways (shirts, jerseys, accessories, hotel stays, VIP, tech hampers)
+- Validation coin packs (Bronze → Platinum)
+- FAQ + link back to the live draft room
 
 ### Why Cloudflare + GitHub Pages?
 
