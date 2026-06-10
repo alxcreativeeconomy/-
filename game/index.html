@@ -464,6 +464,27 @@
       pointer-events: none;
     }
 
+    .giveaway-badges {
+      position: absolute;
+      left: 0.45rem;
+      right: 0.45rem;
+      bottom: 0.4rem;
+      z-index: 2;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+      pointer-events: none;
+    }
+
+    .giveaway-badges img {
+      height: 0.95rem;
+      width: auto;
+      padding: 0.12rem 0.28rem;
+      border-radius: 0.25rem;
+      background: rgba(3, 7, 18, 0.72);
+      filter: grayscale(1) brightness(1.35);
+    }
+
     .giveaway-body {
       padding: 0.8rem 0.9rem 1rem;
     }
@@ -773,14 +794,14 @@
             <img
               class="giveaway-thumb"
               src="giveaways/shirts.jpg"
-              alt="Official football jerseys and national team shirts"
+              alt="Messi and Ronaldo style iconic football t-shirts on display"
               loading="lazy"
               decoding="async"
             />
           </div>
           <div class="giveaway-body">
-            <h4>Official shirts</h4>
-            <p>Authentic national &amp; club jerseys from partner networks</p>
+            <h4>Messi &amp; Ronaldo shirts</h4>
+            <p>Legendary football t-shirts from Messi, Ronaldo &amp; global icons</p>
           </div>
         </article>
         <article class="giveaway-item">
@@ -788,14 +809,14 @@
             <img
               class="giveaway-thumb"
               src="giveaways/scarves.jpg"
-              alt="Football scarves, caps and fan accessories"
+              alt="World Cup nations waving flags and supporter scarves in stadium"
               loading="lazy"
               decoding="async"
             />
           </div>
           <div class="giveaway-body">
-            <h4>Scarves &amp; accessories</h4>
-            <p>Limited fan scarves, caps, balls and matchday kits</p>
+            <h4>World Cup scarves</h4>
+            <p>Official-style scarves for nations playing in the 2026 World Cup</p>
           </div>
         </article>
         <article class="giveaway-item">
@@ -803,14 +824,19 @@
             <img
               class="giveaway-thumb"
               src="giveaways/training.jpg"
-              alt="Adidas and Nike style football training gear"
+              alt="Adidas, Puma and Nike football training gear"
               loading="lazy"
               decoding="async"
             />
+            <div class="giveaway-badges" aria-hidden="true">
+              <img src="../sponsors/adidas.svg" alt="" />
+              <img src="../sponsors/puma.svg" alt="" />
+              <img src="../sponsors/nike.svg" alt="" />
+            </div>
           </div>
           <div class="giveaway-body">
             <h4>Training gear</h4>
-            <p>Adidas &amp; Nike training tops from sponsor giveaways</p>
+            <p>Adidas, Puma &amp; Nike kits — Neymar-style legend training bundles</p>
           </div>
         </article>
         <article class="giveaway-item">
@@ -833,14 +859,14 @@
             <img
               class="giveaway-thumb"
               src="giveaways/vip.jpg"
-              alt="VIP stadium seats and premium matchday experience"
+              alt="VIP front-row stadium seats with fans watching a live match"
               loading="lazy"
               decoding="async"
             />
           </div>
           <div class="giveaway-body">
-            <h4>VIP experiences</h4>
-            <p>Finals sweepstakes access &amp; official viewing events</p>
+            <h4>VIP experience</h4>
+            <p>Front-row stadium seats with fans seated for live World Cup matches</p>
           </div>
         </article>
         <article class="giveaway-item">
@@ -863,14 +889,19 @@
             <img
               class="giveaway-thumb"
               src="giveaways/hampers.jpg"
-              alt="Matchday snack hamper with drinks and food bundles"
+              alt="Matchday hamper with World Cup sponsor food and drinks"
               loading="lazy"
               decoding="async"
             />
+            <div class="giveaway-badges" aria-hidden="true">
+              <img src="../sponsors/cocacola.svg" alt="" />
+              <img src="../sponsors/mcdonalds.svg" alt="" />
+              <img src="../sponsors/budweiser.svg" alt="" />
+            </div>
           </div>
           <div class="giveaway-body">
             <h4>Matchday hampers</h4>
-            <p>Coca-Cola, McDonald's &amp; Budweiser fan bundles</p>
+            <p>Food &amp; drinks from World Cup sponsors — Coca-Cola, McDonald's &amp; Budweiser</p>
           </div>
         </article>
         <article class="giveaway-item">
