@@ -1581,6 +1581,8 @@
       const [voucherMobile, setVoucherMobile] = useState("");
       const [paymentError, setPaymentError] = useState("");
       const [entryCelebration, setEntryCelebration] = useState(null);
+      const [pendingLockPlayer, setPendingLockPlayer] = useState(null);
+      const [isPlayerStakeModalOpen, setIsPlayerStakeModalOpen] = useState(false);
       const [resetOobCode, setResetOobCode] = useState("");
       const [resetEmail, setResetEmail] = useState("");
       const [newPassword, setNewPassword] = useState("");
@@ -1679,6 +1681,24 @@
         setTimeout(() => setToast(null), 3500);
       }, []);
 
+      const closePlayerStakeModal = useCallback(() => {
+        setIsPlayerStakeModalOpen(false);
+        setPendingLockPlayer(null);
+      }, []);
+
+      const openPlayerStakeModal = useCallback((player) => {
+        if (!currentUser) {
+          showToast("Log in to purchase validation coins for your pick.", "info");
+          setPendingLockPlayer(player);
+          setAuthMode("login");
+          setIsAuthModalOpen(true);
+          return;
+        }
+        setPendingLockPlayer(player);
+        setSelectedPlayer(player);
+        setIsPlayerStakeModalOpen(true);
+      }, [currentUser, showToast]);
+
       const closeHologram = useCallback((confirmPick = false) => {
         if (!hologramPlayer) return;
         const player = hologramPlayer;
@@ -1687,10 +1707,10 @@
           setHologramPlayer(null);
           setHologramExiting(false);
           if (confirmPick) {
-            showToast(`Prediction locked to: ${player.name.toUpperCase()}`, "success");
+            openPlayerStakeModal(player);
           }
         }, 320);
-      }, [hologramPlayer, showToast]);
+      }, [hologramPlayer, openPlayerStakeModal]);
 
       const selectPlayer = useCallback((player) => {
         setSelectedPlayer(player);
@@ -1782,6 +1802,7 @@
       }, []);
 
       const closePaymentModal = useCallback(() => {
+        const returnToPlayerStake = Boolean(pendingLockPlayer);
         setIsPaymentModalOpen(false);
         setPaymentPack(null);
         setPaymentMethod("payfast");
@@ -1789,11 +1810,21 @@
         setVoucherMobile("");
         setPaymentError("");
         setPurchasingPackId(null);
-      }, []);
+        if (returnToPlayerStake) {
+          setIsPlayerStakeModalOpen(true);
+        }
+      }, [pendingLockPlayer]);
 
       const closeEntryCelebration = useCallback(() => {
+        if (entryCelebration?.player) {
+          showToast(
+            `Golden Boot pick validated for ${entryCelebration.player.name.toUpperCase()}!`,
+            "success"
+          );
+        }
         setEntryCelebration(null);
-      }, []);
+        setPendingLockPlayer(null);
+      }, [entryCelebration, showToast]);
 
       const openPaymentModal = useCallback((pack) => {
         if (!currentUser) {
@@ -1828,6 +1859,11 @@
         setIsPaymentModalOpen(true);
       }, [currentUser, showToast]);
 
+      const beginPlayerPackPurchase = useCallback((pack) => {
+        setIsPlayerStakeModalOpen(false);
+        openPaymentModal(pack);
+      }, [openPaymentModal]);
+
       const setUserFromFirebase = useCallback(async (firebaseUser) => {
         if (!firebaseUser) {
           setCurrentUser(null);
@@ -1847,6 +1883,12 @@
           emailVerified: firebaseUser.emailVerified,
         });
       }, []);
+
+      useEffect(() => {
+        if (currentUser && pendingLockPlayer && !isPlayerStakeModalOpen && !isAuthModalOpen && !isPaymentModalOpen) {
+          setIsPlayerStakeModalOpen(true);
+        }
+      }, [currentUser, pendingLockPlayer, isPlayerStakeModalOpen, isAuthModalOpen, isPaymentModalOpen]);
 
       useEffect(() => {
         if (!firebaseAuth) {
@@ -2034,6 +2076,7 @@
               provider,
               amount: paymentPack.value.replace("R", ""),
               experimental: true,
+              player: pendingLockPlayer,
             });
             return;
           }
@@ -2069,6 +2112,7 @@
             email: data.email || currentUser?.email || null,
             emailSent: Boolean(data.emailSent),
             sandbox: Boolean(data.sandbox),
+            player: pendingLockPlayer,
           });
         } catch (error) {
           setPaymentError(mapPurchaseError(error));
@@ -2717,7 +2761,17 @@
                     CONGRATULATIONS!
                   </h3>
                   <p className="text-sm text-gray-300 leading-relaxed mb-6">
-                    Your {entryCelebration.provider === "ott" ? "OTT" : "1Voucher"} redemption was successful.
+                    {entryCelebration.player ? (
+                      <>
+                        Your Golden Boot pick for{" "}
+                        <span className="text-amber-300 font-bold">{entryCelebration.player.name}</span>{" "}
+                        is validated.
+                      </>
+                    ) : (
+                      <>
+                        Your {entryCelebration.provider === "ott" ? "OTT" : "1Voucher"} redemption was successful.
+                      </>
+                    )}
                     <span className="block mt-2 text-amber-300 font-bold">
                       +{entryCelebration.tokens} validation coins added to your GoalKing balance.
                     </span>
@@ -2762,17 +2816,107 @@
             </div>
           )}
 
+          {/* ─── PLAYER STAKE / COIN PURCHASE MODAL ─────────────── */}
+          {isPlayerStakeModalOpen && pendingLockPlayer && (
+            <div className="fixed inset-0 z-[1050] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+              <div className="glass-panel-gold w-full max-w-5xl rounded-2xl overflow-hidden relative">
+                <div className="p-6 border-b border-white/10 flex justify-between items-start gap-4 bg-[#041326]/85">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <img
+                      src={pendingLockPlayer.imageUrl}
+                      alt={pendingLockPlayer.name}
+                      className="w-16 h-16 rounded-xl object-contain bg-[#050c18] border border-white/10 p-1 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400 mb-1">
+                        Lock in your pick
+                      </p>
+                      <h3 className="font-bebas text-3xl sm:text-4xl tracking-wider text-white truncate">
+                        VALIDATE <span className="text-neon-gold">{pendingLockPlayer.short}</span>
+                      </h3>
+                      <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest font-bold">
+                        {pendingLockPlayer.name} · {pendingLockPlayer.pos} · Purchase validation coins to confirm your Golden Boot entry
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closePlayerStakeModal}
+                    className="text-gray-400 hover:text-white transition-all cursor-pointer bg-transparent border-0 shrink-0"
+                  >
+                    <SVGIcons.Close />
+                  </button>
+                </div>
+
+                <div className="p-6 bg-[#030712]/95">
+                  {currentUser && (
+                    <p className="text-[11px] text-amber-400/90 mb-5 font-bold uppercase tracking-widest text-center">
+                      Your balance: {currentUser.tokens ?? 0} tokens · choose a pack below
+                    </p>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {TOKEN_PACKS.map((pk) => (
+                      <div
+                        key={pk.id}
+                        className={`bg-gradient-to-b from-[#09152b] to-[#02050c] rounded-xl p-5 flex flex-col h-full border relative overflow-hidden ${
+                          pk.featured ? "border-amber-400 shadow-[0_10px_25px_rgba(244,197,66,0.12)]" : "border-white/10"
+                        }`}
+                      >
+                        {pk.featured && (
+                          <div className="absolute top-0 right-0 left-0 bg-amber-400 text-gray-900 text-[8px] font-black tracking-widest uppercase py-1 text-center">
+                            Most popular
+                          </div>
+                        )}
+                        <div className="mt-3 mb-4">
+                          <span className="text-[9px] font-black tracking-widest uppercase" style={{ color: pk.color }}>
+                            {pk.name}
+                          </span>
+                          <h4 className="font-bebas text-2xl text-white uppercase tracking-wide mt-1">{pk.value}</h4>
+                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">
+                            {pk.tokens} tokens
+                          </p>
+                        </div>
+                        <p className="text-[11px] text-gray-400 mb-5 flex-1 leading-relaxed">{pk.description}</p>
+                        <button
+                          type="button"
+                          onClick={() => beginPlayerPackPurchase(pk)}
+                          disabled={purchasingPackId === pk.id || !paymentsReady}
+                          className={`w-full py-3 rounded text-[10px] uppercase tracking-widest font-black transition-all cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed ${
+                            pk.featured ? "bg-amber-400 text-gray-950 hover:bg-amber-300" : "bg-[#050c18] text-white border border-white/15 hover:border-white"
+                          }`}
+                        >
+                          {purchasingPackId === pk.id ? "Processing..." : `Buy for ${pendingLockPlayer.short}`}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="text-[10px] text-gray-500 text-center mt-5 uppercase tracking-widest font-bold">
+                    PayFast · OTT 12-digit · 1Voucher 14-digit
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ─── PAYMENT METHOD MODAL ─────────────────────────── */}
           {isPaymentModalOpen && paymentPack && (
-            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+            <div className="fixed inset-0 z-[1060] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
               <div className="glass-panel-gold w-full max-w-md rounded-2xl overflow-hidden relative">
                 <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#041326]/85">
                   <div>
                     <h3 className="font-bebas text-3xl tracking-wider text-white">
-                      BUY <span className="text-neon-gold">{paymentPack.name.toUpperCase()}</span> PACK
+                      {pendingLockPlayer ? (
+                        <>VALIDATE <span className="text-neon-gold">{pendingLockPlayer.short}</span></>
+                      ) : (
+                        <>BUY <span className="text-neon-gold">{paymentPack.name.toUpperCase()}</span> PACK</>
+                      )}
                     </h3>
                     <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest font-bold">
-                      {paymentPack.value} · {paymentPack.tokens} tokens
+                      {pendingLockPlayer
+                        ? `${pendingLockPlayer.name} · ${paymentPack.value} · ${paymentPack.tokens} tokens`
+                        : `${paymentPack.value} · ${paymentPack.tokens} tokens`}
                     </p>
                   </div>
                   <button
