@@ -1351,14 +1351,24 @@
         digits: "12-digit",
         hint: "Enter your 12-digit OTT voucher PIN.",
         placeholder: "1234 5678 9012",
-        maxLength: 14,
+        digitLimit: 12,
       },
       onevoucher: {
         digits: "16-digit",
         hint: "Enter your 16-digit 1Voucher PIN.",
         placeholder: "9876 5432 1098 7600",
-        maxLength: 19,
+        digitLimit: 16,
       },
+    };
+
+    const formatVoucherPinInput = (value, provider) => {
+      const limit = VOUCHER_PIN_COPY[provider]?.digitLimit || 16;
+      const digits = String(value || "").replace(/\D/g, "").slice(0, limit);
+      const parts = [];
+      for (let i = 0; i < digits.length; i += 4) {
+        parts.push(digits.slice(i, i + 4));
+      }
+      return parts.join(" ");
     };
 
     const getExperimentalTokenKey = (uid) => `goalking_experimental_tokens_${uid}`;
@@ -3106,8 +3116,10 @@
                         key={method.id}
                         type="button"
                         onClick={() => {
+                          const nextProvider = method.id === "ott" ? "ott" : "onevoucher";
                           setPaymentMethod(method.id);
                           setPaymentError("");
+                          setVoucherPin((prev) => formatVoucherPinInput(prev, nextProvider));
                         }}
                         className={`payment-method-tab ${paymentMethod === method.id ? "payment-method-tab--active" : ""}`}
                       >
@@ -3146,9 +3158,15 @@
                           inputMode="numeric"
                           autoComplete="off"
                           value={voucherPin}
-                          onChange={(e) => setVoucherPin(e.target.value.replace(/[^\d\s]/g, ""))}
+                          onChange={(e) => {
+                            const provider = paymentMethod === "ott" ? "ott" : "onevoucher";
+                            setVoucherPin(formatVoucherPinInput(e.target.value, provider));
+                          }}
                           placeholder={VOUCHER_PIN_COPY[paymentMethod === "ott" ? "ott" : "onevoucher"].placeholder}
-                          maxLength={VOUCHER_PIN_COPY[paymentMethod === "ott" ? "ott" : "onevoucher"].maxLength}
+                          maxLength={
+                            VOUCHER_PIN_COPY[paymentMethod === "ott" ? "ott" : "onevoucher"].digitLimit
+                            + Math.floor((VOUCHER_PIN_COPY[paymentMethod === "ott" ? "ott" : "onevoucher"].digitLimit - 1) / 4)
+                          }
                           className="w-full bg-[#050c18] border border-white/15 rounded-lg py-3 px-4 text-sm text-white gold-glow-border tracking-widest font-mono"
                         />
                         <p className="text-[10px] text-amber-300/80 mt-2 font-bold uppercase tracking-widest">
