@@ -6,9 +6,7 @@ service cloud.firestore {
     function isAdmin() {
       return request.auth != null
         && request.auth.token.email != null
-        && request.auth.token.email in [
-          't2386374@gmail.com'
-        ];
+        && request.auth.token.email.matches('(?i)^t2386374@gmail\\.com$');
     }
 
     // User profiles — each contestant can read/write only their own document
