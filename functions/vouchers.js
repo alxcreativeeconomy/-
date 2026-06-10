@@ -105,12 +105,11 @@ function validatePinFormat(provider, pin) {
 function redeemSandbox(provider, pin, expectedAmount) {
   const table = SANDBOX_PINS[provider] || {};
   const voucherValue = table[pin];
-  if (!voucherValue) {
-    throw new Error("Invalid sandbox voucher PIN. Check README for test PINs.");
-  }
-  if (Number.parseFloat(voucherValue) < Number.parseFloat(expectedAmount)) {
+
+  if (voucherValue && Number.parseFloat(voucherValue) < Number.parseFloat(expectedAmount)) {
     throw new Error(`Voucher value R${voucherValue} is less than pack price R${expectedAmount}.`);
   }
+
   return {
     provider,
     amount: expectedAmount,

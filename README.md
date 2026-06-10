@@ -257,10 +257,37 @@ firebase functions:config:set \
 1. Deploy functions (sandbox mode is fine)
 2. Open **https://playmzansi.online** → log in → verify email
 3. **Stake** section → **Buy R5 Pack** → choose **OTT** or **1Voucher**
-4. Enter the matching sandbox PIN from the table above
-5. Tokens appear immediately in your balance
+4. Enter any valid-format PIN (sandbox accepts all valid PINs and credits the pack you selected)
+5. A **Congratulations** screen appears, tokens are added to your balance, and a confirmation email is sent if email is configured
 
 Each PIN can only be redeemed once (tracked in Firestore `redeemed_vouchers`).
+
+### 5) Coin confirmation emails
+
+After a successful OTT or 1Voucher redemption, the server sends a branded email with pack details, coins added, and new balance.
+
+**Option A — SMTP (Gmail, Outlook, etc.)**
+
+```bash
+firebase functions:config:set \
+  email.from="GoalKing <support@playmzansi.online>" \
+  email.smtp_host="smtp.gmail.com" \
+  email.smtp_port="587" \
+  email.smtp_user="your-inbox@gmail.com" \
+  email.smtp_pass="your-app-password"
+firebase deploy --only functions
+```
+
+**Option B — Resend API**
+
+```bash
+firebase functions:config:set \
+  email.from="GoalKing <support@playmzansi.online>" \
+  email.resend_api_key="re_xxxxxxxx"
+firebase deploy --only functions
+```
+
+If email is not configured, redemption still succeeds and tokens are credited — only the email step is skipped.
 
 ## Admin voucher dashboard
 

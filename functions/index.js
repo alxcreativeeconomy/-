@@ -9,6 +9,7 @@ const {
 const { getPack } = require("./packs");
 const { hashPin, redeemVoucher } = require("./vouchers");
 const { assertAdmin, getDashboardData, isAdminUser } = require("./admin");
+const { sendCoinConfirmationEmail } = require("./email");
 
 admin.initializeApp();
 
@@ -205,13 +206,24 @@ exports.redeemVoucher = functions.https.onCall(async (data, context) => {
       },
     });
 
+    const userSnap = await db.collection("users").doc(context.auth.uid).get();
+    const userData = userSnap.data() || {};
+    const userEmail = context.auth.token.email || userData.email || null;
+    const username = userData.username
+      || (userEmail ? userEmail.split("@")[0].toUpperCase() : "CONTESTANT");
+    const newBalance = userData.tokens ?? pack.tokens;
+
     if (!credited) {
       return {
         success: true,
         alreadyProcessed: true,
         tokens: pack.tokens,
         packId,
+        packName: pack.name,
         provider,
+        amount: pack.amount,
+        newBalance,
+        emailSent: false,
       };
     }
 
@@ -224,12 +236,33 @@ exports.redeemVoucher = functions.https.onCall(async (data, context) => {
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
+    let emailSent = false;
+    if (userEmail) {
+      try {
+        emailSent = await sendCoinConfirmationEmail({
+          to: userEmail,
+          username,
+          packName: pack.name,
+          tokens: pack.tokens,
+          newBalance,
+          provider,
+          amount: pack.amount,
+        });
+      } catch (emailError) {
+        console.error("Coin confirmation email failed:", emailError);
+      }
+    }
+
     return {
       success: true,
       tokens: pack.tokens,
       packId,
+      packName: pack.name,
       provider,
       amount: pack.amount,
+      newBalance,
+      emailSent,
+      email: userEmail,
       sandbox: redemption.sandbox,
     };
   } catch (error) {

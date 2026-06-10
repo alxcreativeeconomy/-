@@ -77,6 +77,38 @@
       filter: brightness(1.15);
     }
 
+    .entry-celebration-overlay {
+      animation: celebrationFadeIn 0.45s ease-out;
+    }
+
+    .entry-celebration-card {
+      animation: celebrationPop 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .entry-celebration-coin {
+      width: 88px;
+      height: 88px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 35% 30%, #fff, #f4c542 52%, #8a6414 100%);
+      box-shadow: 0 0 35px rgba(244, 197, 66, 0.55);
+      animation: celebrationCoinPulse 2.2s ease-in-out infinite;
+    }
+
+    @keyframes celebrationFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes celebrationPop {
+      from { opacity: 0; transform: translateY(18px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes celebrationCoinPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 35px rgba(244, 197, 66, 0.55); }
+      50% { transform: scale(1.06); box-shadow: 0 0 50px rgba(244, 197, 66, 0.75); }
+    }
+
     /* 3D Coin Rotation */
     @keyframes rotateCoin {
       0% { transform: translateY(0) rotateY(0deg) scale(1); }
@@ -1514,6 +1546,7 @@
       const [voucherPin, setVoucherPin] = useState("");
       const [voucherMobile, setVoucherMobile] = useState("");
       const [paymentError, setPaymentError] = useState("");
+      const [entryCelebration, setEntryCelebration] = useState(null);
       const [resetOobCode, setResetOobCode] = useState("");
       const [resetEmail, setResetEmail] = useState("");
       const [newPassword, setNewPassword] = useState("");
@@ -1722,6 +1755,10 @@
         setVoucherMobile("");
         setPaymentError("");
         setPurchasingPackId(null);
+      }, []);
+
+      const closeEntryCelebration = useCallback(() => {
+        setEntryCelebration(null);
       }, []);
 
       const openPaymentModal = useCallback((pack) => {
@@ -1957,15 +1994,24 @@
             mobile: provider === "ott" ? voucherMobile.trim() || undefined : undefined,
           });
 
-          const credited = result?.data?.tokens ?? paymentPack.tokens;
+          const data = result?.data || {};
+          const credited = data.tokens ?? paymentPack.tokens;
+          const newBalance = data.newBalance ?? ((currentUser?.tokens ?? 0) + credited);
+
           await setUserFromFirebase(firebaseAuth.currentUser);
+          setCurrentUser((prev) => (prev ? { ...prev, tokens: newBalance } : prev));
+
           closePaymentModal();
-          showToast(
-            result?.data?.sandbox
-              ? `${paymentPack.name} pack unlocked (sandbox). +${credited} tokens added.`
-              : `${paymentPack.name} pack unlocked. +${credited} tokens added.`,
-            "success"
-          );
+          setEntryCelebration({
+            packName: data.packName || `${paymentPack.name} Coin Pack`,
+            tokens: credited,
+            newBalance,
+            provider,
+            amount: data.amount || paymentPack.value.replace("R", ""),
+            email: data.email || currentUser?.email || null,
+            emailSent: Boolean(data.emailSent),
+            sandbox: Boolean(data.sandbox),
+          });
         } catch (error) {
           setPaymentError(mapPurchaseError(error));
         } finally {
@@ -2596,6 +2642,60 @@
                     : "Add Firebase config locally or via GitHub Secrets to enable live sign-in."}
                 </div>
 
+              </div>
+            </div>
+          )}
+
+          {/* ─── ENTRY CELEBRATION MODAL ──────────────────────── */}
+          {entryCelebration && (
+            <div className="entry-celebration-overlay fixed inset-0 z-[1100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+              <div className="entry-celebration-card glass-panel-gold w-full max-w-lg rounded-2xl overflow-hidden text-center">
+                <div className="p-8 bg-[#030712]/95">
+                  <div className="entry-celebration-coin mx-auto mb-6" />
+                  <p className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-400 mb-2">
+                    Entry confirmed
+                  </p>
+                  <h3 className="font-bebas text-5xl text-white tracking-wider mb-3">
+                    CONGRATULATIONS!
+                  </h3>
+                  <p className="text-sm text-gray-300 leading-relaxed mb-6">
+                    Your {entryCelebration.provider === "ott" ? "OTT" : "1Voucher"} redemption was successful.
+                    <span className="block mt-2 text-amber-300 font-bold">
+                      +{entryCelebration.tokens} validation coins added to your GoalKing balance.
+                    </span>
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3 text-left mb-6">
+                    <div className="bg-[#050c18] border border-white/10 rounded-xl p-4">
+                      <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1">Pack</p>
+                      <p className="text-sm text-white font-bold">{entryCelebration.packName}</p>
+                    </div>
+                    <div className="bg-[#050c18] border border-white/10 rounded-xl p-4">
+                      <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1">Paid</p>
+                      <p className="text-sm text-amber-300 font-bold">R{entryCelebration.amount}</p>
+                    </div>
+                    <div className="bg-[#050c18] border border-amber-400/20 rounded-xl p-4 col-span-2">
+                      <p className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-1">New balance</p>
+                      <p className="font-bebas text-4xl text-amber-400 tracking-wide">{entryCelebration.newBalance} tokens</p>
+                    </div>
+                  </div>
+
+                  {entryCelebration.email && (
+                    <p className="text-xs text-gray-400 mb-6">
+                      {entryCelebration.emailSent
+                        ? <>A coin confirmation email was sent to <span className="text-emerald-300 font-bold">{entryCelebration.email}</span>.</>
+                        : <>Your coins are in your account. Email confirmation will arrive once server email is configured.</>}
+                    </p>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={closeEntryCelebration}
+                    className="w-full py-3.5 rounded-lg btn-gold font-bold text-sm tracking-widest cursor-pointer border-none"
+                  >
+                    Continue to draft
+                  </button>
+                </div>
               </div>
             </div>
           )}
