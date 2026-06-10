@@ -181,3 +181,83 @@ Also set in PayFast:
 ### Why PayFast instead of Stripe?
 
 Stripe has limited support for many South African sole traders and small businesses. PayFast is built for ZAR and local payment methods, with lower onboarding friction for Mzansi merchants.
+
+## OTT & 1Voucher token packs
+
+Players can also buy coin packs with **OTT vouchers** and **1Voucher** PINs — common cash-based payment methods in South Africa. Redemption runs through the `redeemVoucher` Cloud Function and credits tokens instantly (no redirect).
+
+### 1) Merchant signup
+
+| Provider | Sign up |
+|----------|---------|
+| **OTT** | [ottvoucher.com](https://www.ottvoucher.com/) — register as a merchant and request API credentials |
+| **1Voucher** | [1voucher.co.za](https://www.1voucher.co.za/) — register as a merchant and request redemption API access |
+
+Your provider will supply an API URL, API key, vendor/merchant IDs, and (for OTT) username/password if required. Map these to Firebase config (see below).
+
+### 2) Sandbox test PINs (default)
+
+Functions run in **sandbox mode** by default (`vouchers.sandbox="true"`). Use these PINs on the site — pick the PIN that matches the pack price:
+
+**OTT (12 digits)**
+
+| PIN | Value |
+|-----|-------|
+| `123456789012` | R5 (Bronze) |
+| `123456789099` | R25 (Silver) |
+| `123456789188` | R60 (Gold) |
+| `123456789277` | R150 (Platinum) |
+
+**1Voucher (14 digits)**
+
+| PIN | Value |
+|-----|-------|
+| `98765432109876` | R5 (Bronze) |
+| `98765432109899` | R25 (Silver) |
+| `98765432109888` | R60 (Gold) |
+| `98765432109877` | R150 (Platinum) |
+
+### 3) Firebase config
+
+Deploy functions with voucher sandbox enabled (alongside PayFast):
+
+```bash
+firebase functions:config:set \
+  vouchers.sandbox="true" \
+  vouchers.ott.sandbox="true" \
+  vouchers.onevoucher.sandbox="true"
+firebase deploy --only functions,firestore:rules
+```
+
+For **live** OTT redemption:
+
+```bash
+firebase functions:config:set \
+  vouchers.sandbox="false" \
+  vouchers.ott.sandbox="false" \
+  vouchers.ott.api_url="https://your-ott-api-endpoint/redeem" \
+  vouchers.ott.api_key="YOUR_OTT_API_KEY" \
+  vouchers.ott.vendor_id="YOUR_VENDOR_ID" \
+  vouchers.ott.merchant_id="YOUR_MERCHANT_ID"
+```
+
+For **live** 1Voucher redemption:
+
+```bash
+firebase functions:config:set \
+  vouchers.onevoucher.sandbox="false" \
+  vouchers.onevoucher.api_url="https://your-1voucher-api-endpoint/redeem" \
+  vouchers.onevoucher.api_key="YOUR_1VOUCHER_API_KEY" \
+  vouchers.onevoucher.vendor_id="YOUR_VENDOR_ID" \
+  vouchers.onevoucher.merchant_id="YOUR_MERCHANT_ID"
+```
+
+### 4) Test voucher redemption
+
+1. Deploy functions (sandbox mode is fine)
+2. Open **https://playmzansi.online** → log in → verify email
+3. **Stake** section → **Buy R5 Pack** → choose **OTT** or **1Voucher**
+4. Enter the matching sandbox PIN from the table above
+5. Tokens appear immediately in your balance
+
+Each PIN can only be redeemed once (tracked in Firestore `redeemed_vouchers`).

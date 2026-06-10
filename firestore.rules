@@ -25,6 +25,10 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /redeemed_vouchers/{voucherId} {
+      allow read, write: if false;
+    }
+
     // Public leaderboard (optional — enable when you add server-side writes)
     match /leaderboard/{entryId} {
       allow read: if true;

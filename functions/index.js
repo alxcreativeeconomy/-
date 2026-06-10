@@ -6,17 +6,12 @@ const {
   getProcessUrl,
   validateItnSignature,
 } = require("./payfast");
+const { getPack } = require("./packs");
+const { hashPin, redeemVoucher } = require("./vouchers");
 
 admin.initializeApp();
 
 const db = admin.firestore();
-
-const PACKS = {
-  bronze: { name: "Bronze Coin Pack", tokens: 5, amount: "5.00" },
-  silver: { name: "Silver Coin Pack", tokens: 25, amount: "25.00" },
-  gold: { name: "Gold Coin Pack", tokens: 60, amount: "60.00" },
-  platinum: { name: "Platinum Coin Pack", tokens: 150, amount: "150.00" },
-};
 
 const DEFAULT_ORIGIN = "https://playmzansi.online";
 const ALLOWED_ORIGINS = new Set([
@@ -63,6 +58,18 @@ function getNotifyUrl(sandbox) {
   return `https://${region}-${projectId}.cloudfunctions.net/payfastItn`;
 }
 
+function assertAuthenticatedBuyer(context) {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "You must be logged in to purchase tokens.");
+  }
+  if (!context.auth.token.email_verified) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Verify your email before purchasing token packs."
+    );
+  }
+}
+
 async function creditTokens({
   paymentId,
   uid,
@@ -104,12 +111,10 @@ async function creditTokens({
 }
 
 exports.createPayFastPayment = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "You must be logged in to purchase tokens.");
-  }
+  assertAuthenticatedBuyer(context);
 
   const packId = data?.packId;
-  const pack = PACKS[packId];
+  const pack = getPack(packId);
   if (!pack) {
     throw new functions.https.HttpsError("invalid-argument", "Unknown token pack.");
   }
@@ -137,6 +142,99 @@ exports.createPayFastPayment = functions.https.onCall(async (data, context) => {
     fields,
     provider: "payfast",
   };
+});
+
+exports.redeemVoucher = functions.https.onCall(async (data, context) => {
+  assertAuthenticatedBuyer(context);
+
+  const provider = data?.provider;
+  const packId = data?.packId;
+  const pin = data?.pin;
+  const mobile = data?.mobile;
+
+  if (!["ott", "onevoucher"].includes(provider)) {
+    throw new functions.https.HttpsError("invalid-argument", "Choose OTT or 1Voucher.");
+  }
+
+  const pack = getPack(packId);
+  if (!pack) {
+    throw new functions.https.HttpsError("invalid-argument", "Unknown token pack.");
+  }
+
+  if (!pin) {
+    throw new functions.https.HttpsError("invalid-argument", "Enter your voucher PIN.");
+  }
+
+  const pinHash = hashPin(pin);
+  const voucherLockRef = db.collection("redeemed_vouchers").doc(`${provider}_${pinHash}`);
+  const existingVoucher = await voucherLockRef.get();
+  if (existingVoucher.exists) {
+    throw new functions.https.HttpsError("already-exists", "This voucher PIN has already been used.");
+  }
+
+  const reference = `${context.auth.uid}_${packId}_${Date.now()}`;
+
+  let redemption;
+  try {
+    redemption = await redeemVoucher({
+      provider,
+      pin,
+      pack,
+      reference,
+      mobile,
+    });
+  } catch (error) {
+    throw new functions.https.HttpsError("invalid-argument", error.message || "Voucher redemption failed.");
+  }
+
+  const paymentId = `${provider}_${redemption.transactionId || reference}`;
+
+  try {
+    const credited = await creditTokens({
+      paymentId,
+      uid: context.auth.uid,
+      packId,
+      tokens: pack.tokens,
+      amount: pack.amount,
+      provider,
+      raw: {
+        transactionId: redemption.transactionId,
+        sandbox: redemption.sandbox,
+        pinHash,
+      },
+    });
+
+    if (!credited) {
+      return {
+        success: true,
+        alreadyProcessed: true,
+        tokens: pack.tokens,
+        packId,
+        provider,
+      };
+    }
+
+    await voucherLockRef.set({
+      uid: context.auth.uid,
+      packId,
+      provider,
+      paymentId,
+      pinHash,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return {
+      success: true,
+      tokens: pack.tokens,
+      packId,
+      provider,
+      amount: pack.amount,
+      sandbox: redemption.sandbox,
+    };
+  } catch (error) {
+    console.error("Failed to credit voucher payment:", error);
+    throw new functions.https.HttpsError("internal", "Payment succeeded but tokens could not be credited.");
+  }
 });
 
 exports.payfastItn = functions.https.onRequest(async (req, res) => {
@@ -178,7 +276,7 @@ exports.payfastItn = functions.https.onRequest(async (req, res) => {
   const uid = payload.custom_str1;
   const packId = payload.custom_str2;
   const tokens = Number.parseInt(payload.custom_str3 || "0", 10);
-  const pack = PACKS[packId];
+  const pack = getPack(packId);
   const paymentId = payload.pf_payment_id || payload.m_payment_id;
 
   if (!uid || !tokens || !paymentId) {

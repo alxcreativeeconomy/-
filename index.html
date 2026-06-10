@@ -1254,12 +1254,13 @@
       const messages = {
         "functions/unauthenticated": "Please log in before purchasing token packs.",
         "functions/permission-denied": "You do not have permission to start checkout.",
-        "functions/invalid-argument": "That coin pack is not available.",
+        "functions/invalid-argument": error?.message || "That coin pack or voucher PIN is not valid.",
+        "functions/already-exists": "This voucher PIN has already been used.",
         "functions/failed-precondition": error?.message || "PayFast is not configured on the server yet.",
         "functions/unavailable": "Payments are temporarily unavailable. Try again shortly.",
         "functions/internal": "Payment service error. Try again in a moment.",
       };
-      return messages[code] || error?.message || "Could not start checkout. Try again.";
+      return messages[code] || error?.message || "Could not complete payment. Try again.";
     };
 
     const submitPayFastCheckout = (action, fields) => {
@@ -1507,6 +1508,12 @@
       const [authSubmitting, setAuthSubmitting] = useState(false);
       const [showResendVerification, setShowResendVerification] = useState(false);
       const [purchasingPackId, setPurchasingPackId] = useState(null);
+      const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+      const [paymentPack, setPaymentPack] = useState(null);
+      const [paymentMethod, setPaymentMethod] = useState("payfast");
+      const [voucherPin, setVoucherPin] = useState("");
+      const [voucherMobile, setVoucherMobile] = useState("");
+      const [paymentError, setPaymentError] = useState("");
       const [resetOobCode, setResetOobCode] = useState("");
       const [resetEmail, setResetEmail] = useState("");
       const [newPassword, setNewPassword] = useState("");
@@ -1707,6 +1714,49 @@
         setConfirmPassword("");
       }, []);
 
+      const closePaymentModal = useCallback(() => {
+        setIsPaymentModalOpen(false);
+        setPaymentPack(null);
+        setPaymentMethod("payfast");
+        setVoucherPin("");
+        setVoucherMobile("");
+        setPaymentError("");
+        setPurchasingPackId(null);
+      }, []);
+
+      const openPaymentModal = useCallback((pack) => {
+        if (!currentUser) {
+          showToast("Please log in to purchase coin packages.", "info");
+          setAuthMode("login");
+          setIsAuthModalOpen(true);
+          return;
+        }
+
+        if (!firebaseReady) {
+          showToast("Firebase is not configured yet.", "info");
+          return;
+        }
+
+        if (!firebaseFunctions) {
+          showToast("Payment functions are not available. Deploy Firebase Functions first.", "info");
+          return;
+        }
+
+        if (currentUser.emailVerified === false) {
+          showToast("Verify your email before purchasing token packs.", "info");
+          setAuthMode("login");
+          setIsAuthModalOpen(true);
+          return;
+        }
+
+        setPaymentPack(pack);
+        setPaymentMethod("payfast");
+        setVoucherPin("");
+        setVoucherMobile("");
+        setPaymentError("");
+        setIsPaymentModalOpen(true);
+      }, [currentUser, showToast]);
+
       const setUserFromFirebase = useCallback(async (firebaseUser) => {
         if (!firebaseUser) {
           setCurrentUser(null);
@@ -1860,36 +1910,15 @@
         return () => { cancelled = true; };
       }, [showToast]);
 
-      const handlePurchasePack = async (pack) => {
-        if (!currentUser) {
-          showToast("Please log in to purchase coin packages.", "info");
-          setAuthMode("login");
-          setIsAuthModalOpen(true);
-          return;
-        }
+      const handlePayFastCheckout = async () => {
+        if (!paymentPack) return;
 
-        if (!firebaseReady) {
-          showToast("Firebase is not configured yet.", "info");
-          return;
-        }
-
-        if (!firebaseFunctions) {
-          showToast("Payment functions are not available. Deploy Firebase Functions first.", "info");
-          return;
-        }
-
-        if (currentUser.emailVerified === false) {
-          showToast("Verify your email before purchasing token packs.", "info");
-          setAuthMode("login");
-          setIsAuthModalOpen(true);
-          return;
-        }
-
-        setPurchasingPackId(pack.id);
+        setPurchasingPackId(paymentPack.id);
+        setPaymentError("");
         try {
           const createPayFastPayment = firebaseFunctions.httpsCallable("createPayFastPayment");
           const result = await createPayFastPayment({
-            packId: pack.id,
+            packId: paymentPack.id,
             origin: getCheckoutOrigin(),
           });
 
@@ -1899,7 +1928,46 @@
 
           submitPayFastCheckout(result.data.action, result.data.fields);
         } catch (error) {
-          showToast(mapPurchaseError(error), "info");
+          setPaymentError(mapPurchaseError(error));
+        } finally {
+          setPurchasingPackId(null);
+        }
+      };
+
+      const handleRedeemVoucher = async (e) => {
+        e.preventDefault();
+        if (!paymentPack) return;
+
+        const provider = paymentMethod === "ott" ? "ott" : "onevoucher";
+        const pin = voucherPin.replace(/\s+/g, "").trim();
+
+        if (!pin) {
+          setPaymentError("Enter your voucher PIN.");
+          return;
+        }
+
+        setPurchasingPackId(paymentPack.id);
+        setPaymentError("");
+        try {
+          const redeemVoucherFn = firebaseFunctions.httpsCallable("redeemVoucher");
+          const result = await redeemVoucherFn({
+            provider,
+            packId: paymentPack.id,
+            pin,
+            mobile: provider === "ott" ? voucherMobile.trim() || undefined : undefined,
+          });
+
+          const credited = result?.data?.tokens ?? paymentPack.tokens;
+          await setUserFromFirebase(firebaseAuth.currentUser);
+          closePaymentModal();
+          showToast(
+            result?.data?.sandbox
+              ? `${paymentPack.name} pack unlocked (sandbox). +${credited} tokens added.`
+              : `${paymentPack.name} pack unlocked. +${credited} tokens added.`,
+            "success"
+          );
+        } catch (error) {
+          setPaymentError(mapPurchaseError(error));
         } finally {
           setPurchasingPackId(null);
         }
@@ -2532,6 +2600,132 @@
             </div>
           )}
 
+          {/* ─── PAYMENT METHOD MODAL ─────────────────────────── */}
+          {isPaymentModalOpen && paymentPack && (
+            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+              <div className="glass-panel-gold w-full max-w-md rounded-2xl overflow-hidden relative">
+                <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#041326]/85">
+                  <div>
+                    <h3 className="font-bebas text-3xl tracking-wider text-white">
+                      BUY <span className="text-neon-gold">{paymentPack.name.toUpperCase()}</span> PACK
+                    </h3>
+                    <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest font-bold">
+                      {paymentPack.value} · {paymentPack.tokens} tokens
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closePaymentModal}
+                    className="text-gray-400 hover:text-white transition-all cursor-pointer bg-transparent border-0"
+                  >
+                    <SVGIcons.Close />
+                  </button>
+                </div>
+
+                <div className="p-6 space-y-5 bg-[#030712]/95">
+                  {paymentError && (
+                    <div className="p-3 bg-red-950/50 border border-red-500/30 rounded-lg text-xs text-red-200 font-medium">
+                      {paymentError}
+                    </div>
+                  )}
+
+                  <div className="flex gap-1 p-1 bg-[#050c18] rounded-lg border border-white/10">
+                    {[
+                      { id: "payfast", label: "PayFast" },
+                      { id: "ott", label: "OTT" },
+                      { id: "onevoucher", label: "1Voucher" },
+                    ].map((method) => (
+                      <button
+                        key={method.id}
+                        type="button"
+                        onClick={() => {
+                          setPaymentMethod(method.id);
+                          setPaymentError("");
+                        }}
+                        className="flex-1 py-2.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer border-0"
+                        style={{
+                          background: paymentMethod === method.id ? "#f4c542" : "transparent",
+                          color: paymentMethod === method.id ? "#030712" : "#9CA3AF",
+                        }}
+                      >
+                        {method.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {paymentMethod === "payfast" ? (
+                    <div className="space-y-4">
+                      <p className="text-xs text-gray-400 leading-relaxed">
+                        Pay with South African cards, debit cards, or EFT via PayFast. You will be redirected to complete checkout securely.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handlePayFastCheckout}
+                        disabled={purchasingPackId === paymentPack.id}
+                        className="w-full py-3.5 rounded-lg btn-gold font-bold text-sm tracking-widest cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {purchasingPackId === paymentPack.id ? "Opening PayFast..." : `Pay ${paymentPack.value} with PayFast`}
+                      </button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleRedeemVoucher} className="space-y-4">
+                      <p className="text-xs text-gray-400 leading-relaxed">
+                        {paymentMethod === "ott"
+                          ? "Enter the 12-digit PIN from your OTT voucher. Tokens are credited instantly after validation."
+                          : "Enter the 14–16 digit PIN from your 1Voucher. Tokens are credited instantly after validation."}
+                      </p>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                          Voucher PIN
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          value={voucherPin}
+                          onChange={(e) => setVoucherPin(e.target.value.replace(/[^\d\s]/g, ""))}
+                          placeholder={paymentMethod === "ott" ? "1234 5678 9012" : "9876 5432 1098 76"}
+                          maxLength={paymentMethod === "ott" ? 14 : 19}
+                          className="w-full bg-[#050c18] border border-white/15 rounded-lg py-3 px-4 text-sm text-white gold-glow-border tracking-widest font-mono"
+                        />
+                      </div>
+
+                      {paymentMethod === "ott" && (
+                        <div>
+                          <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                            Mobile (optional)
+                          </label>
+                          <input
+                            type="tel"
+                            value={voucherMobile}
+                            onChange={(e) => setVoucherMobile(e.target.value)}
+                            placeholder="0821234567"
+                            className="w-full bg-[#050c18] border border-white/15 rounded-lg py-3 px-4 text-sm text-white gold-glow-border"
+                          />
+                        </div>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={purchasingPackId === paymentPack.id}
+                        className="w-full py-3.5 rounded-lg btn-gold font-bold text-sm tracking-widest cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {purchasingPackId === paymentPack.id
+                          ? "Redeeming..."
+                          : `Redeem ${paymentMethod === "ott" ? "OTT" : "1Voucher"} · ${paymentPack.value}`}
+                      </button>
+                    </form>
+                  )}
+                </div>
+
+                <div className="p-4 bg-[#041326] text-[10px] text-gray-400 border-t border-white/5 text-center px-6">
+                  Voucher PINs are single-use. PayFast · OTT · 1Voucher accepted in ZAR.
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ─── NAVIGATION BAR (FIFA Broadcast Style) ──────────── */}
           <nav 
             style={{
@@ -2810,7 +3004,7 @@
                 <p className="text-xs text-gray-400 mt-2">Choose validation coins to verify your prediction entries on kickoff.</p>
                 {paymentsReady ? (
                   <p className="text-[10px] text-emerald-300/90 mt-3 font-bold uppercase tracking-widest">
-                    Secure payments · PayFast · Cards &amp; EFT · ZAR
+                    PayFast · OTT Voucher · 1Voucher · ZAR
                   </p>
                 ) : (
                   <p className="text-[10px] text-amber-300/80 mt-3 font-bold uppercase tracking-widest">
@@ -2869,14 +3063,14 @@
                       </div>
                       
                       <button 
-                        onClick={() => handlePurchasePack(pk)}
+                        onClick={() => openPaymentModal(pk)}
                         disabled={purchasingPackId === pk.id || !paymentsReady}
                         className={`w-full py-3.5 rounded text-xs uppercase tracking-widest font-black transition-all cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed ${
                           pk.featured ? 'bg-amber-400 text-gray-950 hover:bg-amber-300' : 'bg-[#050c18] text-white border border-white/15 hover:border-white'
                         }`}
                       >
                         {purchasingPackId === pk.id
-                          ? "Opening PayFast..."
+                          ? "Processing..."
                           : paymentsReady
                             ? `Buy ${pk.value} Pack`
                             : "Coming Soon"}
