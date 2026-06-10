@@ -1762,6 +1762,7 @@
       const [authLoading, setAuthLoading] = useState(firebaseReady);
       const [authSubmitting, setAuthSubmitting] = useState(false);
       const [showResendVerification, setShowResendVerification] = useState(false);
+      const [showRegisteredSpamNotice, setShowRegisteredSpamNotice] = useState(false);
       const [purchasingPackId, setPurchasingPackId] = useState(null);
       const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
       const [paymentPack, setPaymentPack] = useState(null);
@@ -2007,6 +2008,7 @@
 
       const closeAuthModal = useCallback(() => {
         setIsAuthModalOpen(false);
+        setShowRegisteredSpamNotice(false);
         setAuthError("");
         setAuthSuccess("");
         setAuthEmail("");
@@ -2388,7 +2390,12 @@
           setAuthSuccess(`Confirmation email sent to ${authEmail}. Open the link in your inbox, then log in.`);
           showToast("Check your inbox to verify your email.", "info");
         } catch (error) {
-          setAuthError(mapAuthError(error));
+          if (error?.code === "auth/email-already-in-use") {
+            setAuthError("");
+            setShowRegisteredSpamNotice(true);
+          } else {
+            setAuthError(mapAuthError(error));
+          }
         } finally {
           setAuthSubmitting(false);
         }
@@ -2978,6 +2985,66 @@
                     : "Add Firebase config locally or via GitHub Secrets to enable live sign-in."}
                 </div>
 
+              </div>
+            </div>
+          )}
+
+          {showRegisteredSpamNotice && (
+            <div className="fixed inset-0 z-[1010] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
+              <div className="glass-panel-gold w-full max-w-md rounded-2xl overflow-hidden relative">
+                <div className="p-6 border-b border-white/10 flex justify-between items-start gap-4 bg-[#041326]/85">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400 mb-1">
+                      Account already exists
+                    </p>
+                    <h3 className="font-bebas text-3xl tracking-wider text-white leading-tight">
+                      CHECK YOUR <span className="text-neon-gold">SPAM FOLDER</span>
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowRegisteredSpamNotice(false)}
+                    className="text-gray-400 hover:text-white transition-all cursor-pointer bg-transparent border-0 shrink-0"
+                  >
+                    <SVGIcons.Close />
+                  </button>
+                </div>
+
+                <div className="p-6 space-y-4 bg-[#030712]/95">
+                  <p className="text-sm text-gray-300 leading-relaxed">
+                    <span className="text-white font-bold">{authEmail}</span> is already registered with GoalKing.
+                    If you have not verified yet, your confirmation email may be in <span className="text-amber-300 font-bold">Spam</span>, <span className="text-amber-300 font-bold">Junk</span>, or <span className="text-amber-300 font-bold">Promotions</span>.
+                  </p>
+                  <div className="p-4 rounded-xl border border-amber-400/25 bg-amber-400/10 text-xs text-amber-100 leading-relaxed">
+                    Open your email app, search for <span className="font-mono text-amber-200">GoalKing</span> or <span className="font-mono text-amber-200">firebaseapp</span>, then tap <span className="font-bold text-white">Not spam</span> so future emails reach your inbox.
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    Already verified? Sign in with your email and password. Still stuck? Use resend confirmation on the login screen.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowRegisteredSpamNotice(false);
+                        setAuthMode("login");
+                        setAuthError("");
+                        setAuthSuccess("Check your spam folder for the verification email, then log in once verified.");
+                        setShowResendVerification(true);
+                      }}
+                      className="flex-1 py-3 rounded-lg btn-gold font-bold text-xs tracking-widest cursor-pointer border-none"
+                    >
+                      Go to sign in
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowRegisteredSpamNotice(false)}
+                      className="flex-1 py-3 rounded-lg border border-white/20 text-white font-bold text-xs uppercase tracking-widest hover:border-amber-400/50 hover:text-amber-300 transition-all cursor-pointer bg-transparent"
+                    >
+                      Got it
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
