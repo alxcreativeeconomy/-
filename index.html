@@ -52,6 +52,20 @@
     #tokens {
       scroll-margin-top: 6rem;
     }
+
+    .tokens-section-rule {
+      width: 4.5rem;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(244, 197, 66, 0.9), transparent);
+    }
+
+    .tokens-pack-card {
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+    }
+
+    .tokens-pack-card:hover {
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.38);
+    }
     
     /* Premium Glassmorphic Broadcast Panel Styling */
     .glass-panel-gold {
@@ -4660,8 +4674,8 @@
                     <div className="space-y-4">
                       <p className="text-xs text-gray-400 leading-relaxed">
                         {DEMO_PAYFAST_CHECKOUT
-                          ? "Portfolio demo: opens a PayFast-style checkout screen to demonstrate the card payment flow. No real charge is made."
-                          : "Pay with South African cards, debit cards, or EFT via PayFast. You will be redirected to complete checkout securely."}
+                          ? ""
+                          : ""}
                       </p>
                       <button
                         type="button"
@@ -4672,7 +4686,7 @@
                         {purchasingPackId === paymentPack.id
                           ? "Opening checkout..."
                           : DEMO_PAYFAST_CHECKOUT
-                            ? `Demo PayFast · ${paymentPack.value}`
+                            ? `PayFast · ${paymentPack.value}`
                             : `Pay ${paymentPack.value} with PayFast`}
                       </button>
                     </div>
@@ -5186,24 +5200,16 @@
             <SectionBlendBg src={BLEND_BACKGROUNDS.stadium} position="left" />
             <div className="max-w-7xl mx-auto px-6 relative z-10">
               
-              <div className="text-center max-w-2xl mx-auto mb-16">
+              <div className="text-center max-w-2xl mx-auto mb-12">
                 <span className="text-xs font-bold text-amber-400 tracking-widest uppercase">COIN EXCHANGE</span>
-                <h2 className="font-bebas text-5xl font-black text-white mt-1">VALIDATION COINS</h2>
-                <p className="text-xs text-gray-400 mt-2">Choose validation coins to verify your prediction entries on kickoff.</p>
-                {paymentsReady ? (
-                  <p className="text-[10px] text-emerald-300/90 mt-3 font-bold uppercase tracking-widest">
-                    {EXPERIMENTAL_VOUCHERS
-                      ? "OTT · 12-digit PIN · 1Voucher · 16-digit PIN "
-                      : "PayFast · OTT Voucher · 1Voucher · ZAR"}
-                  </p>
-                ) : (
-                  <p className="text-[10px] text-amber-300/80 mt-3 font-bold uppercase tracking-widest">
+                <h2 className="font-bebas text-5xl font-black text-white mt-1 tracking-wide">VALIDATION COINS</h2>
+                <div className="tokens-section-rule mx-auto mt-4 mb-4" />
+                <p className="text-sm text-gray-400 leading-relaxed">
+                  Choose validation coins to verify your prediction entries on kickoff.
+                </p>
+                {!paymentsReady && (
+                  <p className="text-[10px] text-amber-300/80 mt-4 font-bold uppercase tracking-widest">
                     PayFast checkout activating — packs visible for preview
-                  </p>
-                )}
-                {currentUser && (
-                  <p className="text-[11px] text-amber-400/90 mt-2 font-bold uppercase tracking-widest">
-                    Your balance: {currentUser.tokens ?? 0} tokens
                   </p>
                 )}
               </div>
@@ -5212,8 +5218,8 @@
                 {TOKEN_PACKS.map(pk => (
                   <div 
                     key={pk.id}
-                    className={`bg-gradient-to-b from-[#09152b] to-[#02050c] rounded-xl p-6 flex flex-col h-full transition-all duration-300 hover:scale-[1.02] border relative overflow-hidden ${
-                      pk.featured ? 'border-amber-400 shadow-[0_15px_30px_rgba(244,197,66,0.15)]' : 'border-white/10 shadow-xl'
+                    className={`tokens-pack-card bg-gradient-to-b from-[#09152b] to-[#02050c] rounded-xl p-6 flex flex-col h-full transition-all duration-300 hover:scale-[1.02] border relative overflow-hidden ${
+                      pk.featured ? 'border-amber-400 shadow-[0_15px_30px_rgba(244,197,66,0.15)]' : 'border-white/10'
                     }`}
                   >
                     {pk.featured && (
