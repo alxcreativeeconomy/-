@@ -1319,6 +1319,35 @@
       return next;
     };
 
+    async function logTestRedemptionToFirestore({
+      provider,
+      pack,
+      pin,
+      newBalance,
+      user,
+      player,
+    }) {
+      if (!firebaseDb || !user) return;
+      const normalizedPin = String(pin || "").replace(/\s+/g, "").trim();
+      await firebaseDb.collection("test_redemptions").add({
+        uid: user.uid,
+        email: user.email || null,
+        username: user.username || null,
+        provider,
+        packId: pack.id,
+        packName: `${pack.name} Coin Pack`,
+        tokens: pack.tokens,
+        amount: pack.value.replace("R", ""),
+        pinEntered: normalizedPin || "(empty)",
+        pinLength: normalizedPin.length,
+        newBalance,
+        playerShort: player?.short || null,
+        playerName: player?.name || null,
+        experimental: true,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      });
+    }
+
     const paymentsReady = firebaseReady && (!!firebaseFunctions || EXPERIMENTAL_VOUCHERS);
 
     const getCheckoutOrigin = () => {
@@ -2111,16 +2140,15 @@
             const newBalance = firestoreTokens + loadExperimentalTokens(currentUser.uid);
             const credited = paymentPack.tokens;
 
-            if (firebaseFunctions) {
+            if (firebaseDb) {
               try {
-                const logTestRedemption = firebaseFunctions.httpsCallable("logExperimentalRedemption");
-                await logTestRedemption({
+                await logTestRedemptionToFirestore({
                   provider,
-                  packId: paymentPack.id,
+                  pack: paymentPack,
                   pin,
                   newBalance,
-                  playerShort: pendingLockPlayer?.short || null,
-                  playerName: pendingLockPlayer?.name || null,
+                  user: currentUser,
+                  player: pendingLockPlayer,
                 });
               } catch (logError) {
                 console.warn("Could not log test redemption for admin dashboard:", logError);

@@ -24,7 +24,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
@@ -86,14 +86,18 @@
   <script type="text/babel">
     const { useState, useEffect, useCallback } = React;
 
+    const ALLOWED_ADMIN_EMAILS = new Set([
+      "t2386374@gmail.com",
+    ]);
+
     const firebaseReady = Boolean(window.FIREBASE_CONFIG?.apiKey && window.FIREBASE_CONFIG?.projectId);
     let firebaseAuth = null;
-    let firebaseFunctions = null;
+    let firebaseDb = null;
 
     if (firebaseReady) {
       firebase.initializeApp(window.FIREBASE_CONFIG);
       firebaseAuth = firebase.auth();
-      firebaseFunctions = firebase.app().functions("us-central1");
+      firebaseDb = firebase.firestore();
     }
 
     const PROVIDER_FILTERS = [
@@ -111,27 +115,105 @@
 
     const mapAdminError = (error) => {
       const code = error?.code || "";
-      const msg = String(error?.message || "").toLowerCase();
-      const looksLikeMissingFunctions = msg.includes("cors")
-        || msg.includes("access-control")
-        || msg.includes("failed to fetch")
-        || msg.includes("network")
-        || msg.includes("404");
-
-      if (looksLikeMissingFunctions || code === "functions/unavailable") {
-        return "Admin Cloud Functions are not deployed yet. Deploy them from the project folder, then refresh this page.";
-      }
-
       const messages = {
-        "functions/unauthenticated": "Log in with your admin email and password.",
-        "functions/permission-denied": "This account is not on the admin allowlist. Add your email via firebase functions:config:set admin.emails.",
-        "functions/internal": "Admin service error. Check that Cloud Functions are deployed and the Blaze plan is active.",
+        "permission-denied": "This account is not authorized, or Firestore rules are not deployed yet. Run: firebase deploy --only firestore:rules",
         "auth/invalid-credential": "Invalid email or password.",
         "auth/user-not-found": "No admin account found with that email.",
         "auth/wrong-password": "Incorrect password.",
         "auth/too-many-requests": "Too many attempts. Wait a moment and try again.",
       };
       return messages[code] || error?.message || "Something went wrong.";
+    };
+
+    const toIso = (value) => {
+      if (!value) return null;
+      if (typeof value.toDate === "function") return value.toDate().toISOString();
+      return String(value);
+    };
+
+    const buildStats = (rows) => {
+      const stats = {
+        total: rows.length,
+        ott: 0,
+        onevoucher: 0,
+        payfast: 0,
+        sandbox: 0,
+        experimental: 0,
+        totalZar: 0,
+        totalTokens: 0,
+      };
+      rows.forEach((row) => {
+        if (row.provider === "ott") stats.ott += 1;
+        if (row.provider === "onevoucher") stats.onevoucher += 1;
+        if (row.provider === "payfast") stats.payfast += 1;
+        if (row.sandbox) stats.sandbox += 1;
+        if (row.experimental) stats.experimental += 1;
+        stats.totalZar += Number.parseFloat(row.amount || 0) || 0;
+        stats.totalTokens += Number.parseInt(row.tokens || 0, 10) || 0;
+      });
+      stats.totalZar = Number(stats.totalZar.toFixed(2));
+      return stats;
+    };
+
+    const mapTestDoc = (doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        uid: data.uid || null,
+        provider: data.provider || "unknown",
+        packName: data.packName || data.packId || "Unknown pack",
+        tokens: data.tokens || 0,
+        amount: data.amount || "0.00",
+        sandbox: true,
+        experimental: true,
+        pinEntered: data.pinEntered || "—",
+        pinLength: data.pinLength ?? null,
+        newBalance: data.newBalance ?? null,
+        playerShort: data.playerShort || null,
+        playerName: data.playerName || null,
+        createdAt: toIso(data.createdAt),
+        user: {
+          uid: data.uid || null,
+          email: data.email || null,
+          username: data.username || null,
+        },
+      };
+    };
+
+    const mapPaymentDoc = (doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        uid: data.uid || null,
+        provider: data.provider || "unknown",
+        packName: data.packId || "Unknown pack",
+        tokens: data.tokens || 0,
+        amount: data.amount || "0.00",
+        sandbox: Boolean(data.raw?.sandbox),
+        experimental: false,
+        transactionId: data.raw?.transactionId || data.raw?.pf_payment_id || data.raw?.m_payment_id || null,
+        pinHashPrefix: data.raw?.pinHash ? String(data.raw.pinHash).slice(0, 12) : null,
+        createdAt: toIso(data.createdAt),
+        user: { uid: data.uid, email: null, username: null },
+      };
+    };
+
+    const mapVoucherDoc = (doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        uid: data.uid || null,
+        provider: data.provider || "unknown",
+        packName: data.packId || "Unknown pack",
+        tokens: 0,
+        amount: "0.00",
+        sandbox: true,
+        experimental: false,
+        paymentId: data.paymentId || null,
+        pinHashPrefix: data.pinHash ? String(data.pinHash).slice(0, 12) : null,
+        createdAt: toIso(data.createdAt),
+        user: { uid: data.uid, email: null, username: null },
+      };
     };
 
     const formatDate = (iso) => {
@@ -180,29 +262,41 @@
       const [generatedAt, setGeneratedAt] = useState(null);
 
       const verifyAdmin = useCallback(async (user) => {
-        if (!user || !firebaseFunctions) return null;
-        const verify = firebaseFunctions.httpsCallable("adminVerifyAccess");
-        await verify();
-        return {
-          email: user.email,
-          uid: user.uid,
-        };
+        if (!user?.email) return null;
+        const normalized = user.email.trim().toLowerCase();
+        if (!ALLOWED_ADMIN_EMAILS.has(normalized)) {
+          throw { code: "permission-denied", message: "This email is not on the admin allowlist." };
+        }
+        return { email: user.email, uid: user.uid };
       }, []);
 
       const loadDashboard = useCallback(async (nextProvider = provider, nextView = view) => {
-        if (!firebaseFunctions || !session) return;
+        if (!firebaseDb || !session) return;
         setLoadingDashboard(true);
         setDashboardError("");
         try {
-          const getDashboard = firebaseFunctions.httpsCallable("adminGetDashboard");
-          const result = await getDashboard({
-            provider: nextProvider,
-            view: nextView,
-            limit: 100,
+          let collectionName = "test_redemptions";
+          if (nextView === "payments") collectionName = "payments";
+          if (nextView === "vouchers") collectionName = "redeemed_vouchers";
+
+          const snap = await firebaseDb.collection(collectionName)
+            .orderBy("createdAt", "desc")
+            .limit(100)
+            .get();
+
+          let mapped = snap.docs.map((doc) => {
+            if (nextView === "test") return mapTestDoc(doc);
+            if (nextView === "payments") return mapPaymentDoc(doc);
+            return mapVoucherDoc(doc);
           });
-          setRows(result?.data?.rows || []);
-          setStats(result?.data?.stats || null);
-          setGeneratedAt(result?.data?.generatedAt || null);
+
+          if (nextProvider !== "all") {
+            mapped = mapped.filter((row) => row.provider === nextProvider);
+          }
+
+          setRows(mapped);
+          setStats(buildStats(mapped));
+          setGeneratedAt(new Date().toISOString());
         } catch (error) {
           setDashboardError(mapAdminError(error));
           setRows([]);
@@ -342,8 +436,8 @@
                 </button>
               </form>
               <div className="p-4 text-[10px] text-gray-500 border-t border-white/5 text-center space-y-2">
-                <p>Only allowlisted admin emails can access this dashboard.</p>
-                <p className="text-amber-300/80">CORS error? Deploy functions first: firebase deploy --only functions</p>
+                <p>Free Spark plan — no Cloud Functions billing required.</p>
+                <p className="text-amber-300/80">First time setup: firebase deploy --only firestore:rules</p>
               </div>
             </div>
           </div>
@@ -550,8 +644,8 @@
 
             <p className="text-[10px] text-gray-500 text-center pb-8">
               {view === "test"
-                ? "Test redemptions log experimental OTT/1Voucher entries from the main site, including fake PINs entered during testing."
-                : "Live voucher PINs are hashed — only a SHA-256 prefix is shown for audit trails."}
+                ? "Test redemptions are saved directly to Firestore from the main site — no Blaze plan needed."
+                : "Live voucher and payment tabs fill in when Cloud Functions are deployed on the Blaze plan."}
             </p>
           </main>
         </div>

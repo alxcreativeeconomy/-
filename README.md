@@ -289,34 +289,34 @@ firebase deploy --only functions
 
 If email is not configured, redemption still succeeds and tokens are credited — only the email step is skipped.
 
-## Admin voucher dashboard
+## Admin voucher dashboard (free Spark plan)
 
-Staff can review OTT, 1Voucher, and PayFast redemptions at:
+Staff can review test OTT/1Voucher redemptions at:
 
 **https://playmzansi.online/admin.html**
 
+No **Blaze** plan or Cloud Functions billing is required for the **Test redemptions** tab. The dashboard reads directly from Firestore.
+
 ### 1) Create an admin login
 
-Firebase Console → **Authentication** → **Users** → **Add user**
+Firebase Console → **Authentication** → **Users**
 
-Use a dedicated admin email (e.g. `admin@playmzansi.online`) and a strong password. This account is separate from player sign-ups.
+Ensure `t2386374@gmail.com` exists with your chosen password.
 
-### 2) Allowlist admin emails
-
-Only emails on the server allowlist can open the dashboard:
+### 2) Deploy Firestore rules (one-time, free)
 
 ```bash
 cd world-cup-draft
 firebase login
 firebase use goalking-2026
-cd functions && npm install && cd ..
-firebase functions:config:set admin.emails="t2386374@gmail.com"
-firebase deploy --only functions,firestore:rules,firestore:indexes
+firebase deploy --only firestore:rules
 ```
 
-If the admin page shows a **CORS error** or blank screen after login, the Cloud Functions are not deployed yet (the browser gets a 404 without CORS headers). Run the deploy command above. Firebase must be on the **Blaze** plan.
+To add another admin email, update both `firestore.rules` (`isAdmin()` list) and `admin.html` (`ALLOWED_ADMIN_EMAILS`), then redeploy rules.
 
-You can also set `ADMIN_EMAILS` as a comma-separated environment variable on Cloud Functions.
+### Optional: Blaze plan for live payments
+
+Cloud Functions (PayFast ITN, live voucher validation) require the **Blaze** plan. The experimental test flow works without it.
 
 ### 3) What the dashboard shows
 

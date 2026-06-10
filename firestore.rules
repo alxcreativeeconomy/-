@@ -3,6 +3,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && request.auth.token.email in [
+          't2386374@gmail.com'
+        ];
+    }
+
     // User profiles — each contestant can read/write only their own document
     match /users/{userId} {
       allow read: if request.auth != null && request.auth.uid == userId;
@@ -21,19 +29,29 @@ service cloud.firestore {
     }
 
     match /payments/{paymentId} {
-      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow read: if request.auth != null
+        && (resource.data.uid == request.auth.uid || isAdmin());
       allow write: if false;
     }
 
     match /redeemed_vouchers/{voucherId} {
-      allow read, write: if false;
+      allow read: if isAdmin();
+      allow write: if false;
     }
 
     match /test_redemptions/{redemptionId} {
-      allow read, write: if false;
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.experimental == true
+        && request.resource.data.provider in ['ott', 'onevoucher']
+        && request.resource.data.keys().hasAll([
+          'uid', 'email', 'provider', 'packId', 'tokens', 'pinEntered', 'experimental'
+        ]);
+      allow read: if isAdmin();
+      allow update, delete: if false;
     }
 
-    // Public leaderboard (optional — enable when you add server-side writes)
     match /leaderboard/{entryId} {
       allow read: if true;
       allow write: if false;
