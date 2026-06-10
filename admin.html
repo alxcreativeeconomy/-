@@ -111,10 +111,21 @@
 
     const mapAdminError = (error) => {
       const code = error?.code || "";
+      const msg = String(error?.message || "").toLowerCase();
+      const looksLikeMissingFunctions = msg.includes("cors")
+        || msg.includes("access-control")
+        || msg.includes("failed to fetch")
+        || msg.includes("network")
+        || msg.includes("404");
+
+      if (looksLikeMissingFunctions || code === "functions/unavailable") {
+        return "Admin Cloud Functions are not deployed yet. Deploy them from the project folder, then refresh this page.";
+      }
+
       const messages = {
         "functions/unauthenticated": "Log in with your admin email and password.",
-        "functions/permission-denied": "This account is not on the admin allowlist.",
-        "functions/unavailable": "Admin service unavailable. Try again shortly.",
+        "functions/permission-denied": "This account is not on the admin allowlist. Add your email via firebase functions:config:set admin.emails.",
+        "functions/internal": "Admin service error. Check that Cloud Functions are deployed and the Blaze plan is active.",
         "auth/invalid-credential": "Invalid email or password.",
         "auth/user-not-found": "No admin account found with that email.",
         "auth/wrong-password": "Incorrect password.",

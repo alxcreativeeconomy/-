@@ -306,9 +306,15 @@ Use a dedicated admin email (e.g. `admin@playmzansi.online`) and a strong passwo
 Only emails on the server allowlist can open the dashboard:
 
 ```bash
-firebase functions:config:set admin.emails="admin@playmzansi.online,your-email@example.com"
-firebase deploy --only functions,firestore:indexes
+cd world-cup-draft
+firebase login
+firebase use goalking-2026
+cd functions && npm install && cd ..
+firebase functions:config:set admin.emails="t2386374@gmail.com"
+firebase deploy --only functions,firestore:rules,firestore:indexes
 ```
+
+If the admin page shows a **CORS error** or blank screen after login, the Cloud Functions are not deployed yet (the browser gets a 404 without CORS headers). Run the deploy command above. Firebase must be on the **Blaze** plan.
 
 You can also set `ADMIN_EMAILS` as a comma-separated environment variable on Cloud Functions.
 
