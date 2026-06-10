@@ -208,14 +208,14 @@ Functions run in **sandbox mode** by default (`vouchers.sandbox="true"`). Use th
 | `123456789188` | R60 (Gold) |
 | `123456789277` | R150 (Platinum) |
 
-**1Voucher (14 digits)**
+**1Voucher (16 digits)**
 
 | PIN | Value |
 |-----|-------|
-| `98765432109876` | R5 (Bronze) |
-| `98765432109899` | R25 (Silver) |
-| `98765432109888` | R60 (Gold) |
-| `98765432109877` | R150 (Platinum) |
+| `9876543210987600` | R5 (Bronze) |
+| `9876543210989925` | R25 (Silver) |
+| `9876543210988860` | R60 (Gold) |
+| `9876543210987715` | R150 (Platinum) |
 
 ### 3) Firebase config
 

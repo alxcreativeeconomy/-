@@ -11,10 +11,10 @@ const SANDBOX_PINS = {
     "123456789277": "150.00",
   },
   onevoucher: {
-    "98765432109876": "5.00",
-    "98765432109899": "25.00",
-    "98765432109888": "60.00",
-    "98765432109877": "150.00",
+    "9876543210987600": "5.00",
+    "9876543210989925": "25.00",
+    "9876543210988860": "60.00",
+    "9876543210987715": "150.00",
   },
 };
 
@@ -93,8 +93,8 @@ function validatePinFormat(provider, pin) {
   }
 
   if (provider === "onevoucher") {
-    if (!/^\d{14,16}$/.test(pin)) {
-      throw new Error("1Voucher PIN must be 14 to 16 digits.");
+    if (!/^\d{16}$/.test(pin)) {
+      throw new Error("1Voucher PIN must be 16 digits.");
     }
     return;
   }
