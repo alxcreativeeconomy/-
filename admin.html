@@ -341,8 +341,9 @@
                   {authSubmitting ? "Signing in..." : "Sign in"}
                 </button>
               </form>
-              <div className="p-4 text-[10px] text-gray-500 border-t border-white/5 text-center">
-                Only allowlisted admin emails can access this dashboard.
+              <div className="p-4 text-[10px] text-gray-500 border-t border-white/5 text-center space-y-2">
+                <p>Only allowlisted admin emails can access this dashboard.</p>
+                <p className="text-amber-300/80">CORS error? Deploy functions first: firebase deploy --only functions</p>
               </div>
             </div>
           </div>
