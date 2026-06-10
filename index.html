@@ -185,6 +185,128 @@
       transform: translateY(-1px);
     }
 
+    .payment-method-tab .payfast-tab-brand {
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+
+    .payment-method-tab--active .payfast-tab-brand-pay {
+      color: #b9151b;
+    }
+
+    .payment-method-tab--active .payfast-tab-brand-fast {
+      color: #003f87;
+    }
+
+    .payment-method-tab:not(.payment-method-tab--active) .payfast-tab-brand-pay {
+      color: #ff4d57;
+    }
+
+    .payment-method-tab:not(.payment-method-tab--active) .payfast-tab-brand-fast {
+      color: #5eb3ff;
+    }
+
+    .payment-payfast-panel {
+      background: linear-gradient(145deg, rgba(9, 21, 43, 0.95) 0%, rgba(3, 7, 18, 0.98) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 14px;
+      padding: 1.1rem 1.15rem;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.06) inset,
+        0 12px 28px rgba(0, 0, 0, 0.35);
+    }
+
+    .payment-payfast-hero {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      padding-bottom: 0.9rem;
+      margin-bottom: 0.9rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .payment-payfast-player {
+      width: 3.5rem;
+      height: 3.5rem;
+      border-radius: 12px;
+      object-fit: cover;
+      object-position: top center;
+      border: 2px solid rgba(244, 197, 66, 0.45);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+      flex-shrink: 0;
+    }
+
+    .payment-payfast-brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .payment-payfast-brand-row .payfast-demo-brand {
+      font-size: 1.35rem;
+    }
+
+    .payment-payfast-tagline {
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: rgba(148, 163, 184, 0.95);
+      text-align: right;
+      line-height: 1.35;
+    }
+
+    .payment-payfast-logos {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      margin-bottom: 0.95rem;
+      flex-wrap: wrap;
+    }
+
+    .payment-payfast-copy {
+      font-size: 0.78rem;
+      color: #94a3b8;
+      line-height: 1.55;
+      margin-bottom: 0.95rem;
+    }
+
+    .payment-payfast-secure {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      margin-top: 0.75rem;
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #0f766e;
+    }
+
+    .payment-modal-player-thumb {
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 10px;
+      object-fit: cover;
+      object-position: top center;
+      border: 2px solid rgba(244, 197, 66, 0.4);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+      flex-shrink: 0;
+    }
+
+    .btn-gold .payfast-demo-brand-pay {
+      color: #8f1016;
+    }
+
+    .btn-gold .payfast-demo-brand-fast {
+      color: #003f87;
+    }
+
     .stake-pack-card {
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       cursor: pointer;
@@ -4677,19 +4799,29 @@
             <div className="fixed inset-0 z-[1060] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
               <div className="glass-panel-gold w-full max-w-md rounded-2xl overflow-hidden relative">
                 <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#041326]/85">
-                  <div>
-                    <h3 className="font-bebas text-3xl tracking-wider text-white">
-                      {pendingLockPlayer ? (
-                        <>VALIDATE <span className="text-neon-gold">{pendingLockPlayer.short}</span></>
-                      ) : (
-                        <>BUY <span className="text-neon-gold">{paymentPack.name.toUpperCase()}</span> PACK</>
-                      )}
-                    </h3>
-                    <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest font-bold">
-                      {pendingLockPlayer
-                        ? `${pendingLockPlayer.name} · ${paymentPack.value} · ${paymentPack.tokens} tokens`
-                        : `${paymentPack.value} · ${paymentPack.tokens} tokens`}
-                    </p>
+                  <div className="flex items-center gap-3 min-w-0">
+                    {pendingLockPlayer && (
+                      <img
+                        src={pendingLockPlayer.imageUrl}
+                        alt={pendingLockPlayer.name}
+                        className="payment-modal-player-thumb"
+                        decoding="async"
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <h3 className="font-bebas text-3xl tracking-wider text-white">
+                        {pendingLockPlayer ? (
+                          <>VALIDATE <span className="text-neon-gold">{pendingLockPlayer.short}</span></>
+                        ) : (
+                          <>BUY <span className="text-neon-gold">{paymentPack.name.toUpperCase()}</span> PACK</>
+                        )}
+                      </h3>
+                      <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-widest font-bold truncate">
+                        {pendingLockPlayer
+                          ? `${pendingLockPlayer.name} · ${paymentPack.value} · ${paymentPack.tokens} tokens`
+                          : `${paymentPack.value} · ${paymentPack.tokens} tokens`}
+                      </p>
+                    </div>
                   </div>
                   <button
                     type="button"
@@ -4724,18 +4856,58 @@
                         }}
                         className={`payment-method-tab ${paymentMethod === method.id ? "payment-method-tab--active" : ""}`}
                       >
-                        {method.label}
+                        {method.id === "payfast" ? (
+                          <span className="payfast-demo-brand payfast-tab-brand">
+                            <span className="payfast-demo-brand-pay payfast-tab-brand-pay">Pay</span>
+                            <span className="payfast-demo-brand-fast payfast-tab-brand-fast">Fast</span>
+                          </span>
+                        ) : method.label}
                       </button>
                     ))}
                   </div>
 
                   {paymentMethod === "payfast" ? (
-                    <div className="space-y-4">
-                      <p className="text-xs text-gray-400 leading-relaxed">
+                    <div className="payment-payfast-panel">
+                      {pendingLockPlayer && (
+                        <div className="payment-payfast-hero">
+                          <img
+                            src={pendingLockPlayer.imageUrl}
+                            alt={pendingLockPlayer.name}
+                            className="payment-payfast-player"
+                            decoding="async"
+                          />
+                          <div>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-400/90">Validating pick</p>
+                            <p className="font-bebas text-2xl text-white tracking-wide uppercase">{pendingLockPlayer.short}</p>
+                            <p className="text-[11px] text-gray-400 mt-0.5">{pendingLockPlayer.name} · {paymentPack.value} · {paymentPack.tokens} tokens</p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="payment-payfast-brand-row">
+                        <span className="payfast-demo-brand">
+                          <span className="payfast-demo-brand-pay">Pay</span>
+                          <span className="payfast-demo-brand-fast">Fast</span>
+                        </span>
+                        <span className="payment-payfast-tagline">
+                          Secure card<br /> &amp; EFT checkout
+                        </span>
+                      </div>
+
+                      <div className="payment-payfast-logos">
+                        <span className="pf-logo-visa">VISA</span>
+                        <span className="pf-logo-mc"><span className="red" /><span className="yellow" /></span>
+                        <span className="pf-logo-eft">
+                          <span className="blue">instant</span> <span className="green">EFT</span>
+                        </span>
+                      </div>
+
+                      <p className="payment-payfast-copy">
                         {DEMO_PAYFAST_CHECKOUT
-                          ? ""
-                          : ""}
+                          ? "You will be redirected to a secure PayFast checkout to complete your validation coin purchase."
+                          : "Pay with South African cards, debit cards, or EFT via PayFast. You will be redirected to complete checkout securely."}
                       </p>
+
                       <button
                         type="button"
                         onClick={handlePayFastCheckout}
@@ -4744,10 +4916,27 @@
                       >
                         {purchasingPackId === paymentPack.id
                           ? "Opening checkout..."
-                          : DEMO_PAYFAST_CHECKOUT
-                            ? `PayFast · ${paymentPack.value}`
-                            : `Pay ${paymentPack.value} with PayFast`}
+                          : (
+                            <>
+                              Pay {paymentPack.value} with{" "}
+                              <span className="payfast-demo-brand payfast-demo-brand-sm" style={{ verticalAlign: "baseline" }}>
+                                <span className="payfast-demo-brand-pay">Pay</span>
+                                <span className="payfast-demo-brand-fast">Fast</span>
+                              </span>
+                            </>
+                          )}
                       </button>
+
+                      <p className="payment-payfast-secure">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                          <path d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2v-9a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm-3 8V6a3 3 0 116 0v3H9z" />
+                        </svg>
+                        SSL encrypted · Powered by{" "}
+                        <span className="payfast-demo-brand payfast-demo-brand-sm" style={{ verticalAlign: "baseline" }}>
+                          <span className="payfast-demo-brand-pay">Pay</span>
+                          <span className="payfast-demo-brand-fast">Fast</span>
+                        </span>
+                      </p>
                     </div>
                   ) : (
                     <form onSubmit={handleRedeemVoucher} className="space-y-4">
