@@ -1273,7 +1273,26 @@
 
     const PRODUCTION_AUTH_ORIGIN = "https://playmzansi.online";
 
-    const paymentsReady = firebaseReady && !!firebaseFunctions;
+    const EXPERIMENTAL_VOUCHERS = true;
+
+    const getExperimentalTokenKey = (uid) => `goalking_experimental_tokens_${uid}`;
+
+    const loadExperimentalTokens = (uid) => {
+      if (!uid || !EXPERIMENTAL_VOUCHERS) return 0;
+      try {
+        return Number.parseInt(localStorage.getItem(getExperimentalTokenKey(uid)) || "0", 10) || 0;
+      } catch (_) {
+        return 0;
+      }
+    };
+
+    const addExperimentalTokens = (uid, amount) => {
+      const next = loadExperimentalTokens(uid) + amount;
+      localStorage.setItem(getExperimentalTokenKey(uid), String(next));
+      return next;
+    };
+
+    const paymentsReady = firebaseReady && (!!firebaseFunctions || EXPERIMENTAL_VOUCHERS);
 
     const getCheckoutOrigin = () => {
       const host = window.location.hostname;
@@ -1774,12 +1793,12 @@
           return;
         }
 
-        if (!firebaseFunctions) {
+        if (!EXPERIMENTAL_VOUCHERS && !firebaseFunctions) {
           showToast("Payment functions are not available. Deploy Firebase Functions first.", "info");
           return;
         }
 
-        if (currentUser.emailVerified === false) {
+        if (!EXPERIMENTAL_VOUCHERS && currentUser.emailVerified === false) {
           showToast("Verify your email before purchasing token packs.", "info");
           setAuthMode("login");
           setIsAuthModalOpen(true);
@@ -1800,6 +1819,8 @@
           return;
         }
         const profile = await loadUserProfile(firebaseUser.uid);
+        const firestoreTokens = profile?.tokens ?? 0;
+        const experimentalTokens = loadExperimentalTokens(firebaseUser.uid);
         setCurrentUser({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
@@ -1807,7 +1828,7 @@
             || firebaseUser.displayName
             || (firebaseUser.email ? firebaseUser.email.split("@")[0].toUpperCase() : "CONTESTANT"),
           photoURL: profile?.photoURL || firebaseUser.photoURL || null,
-          tokens: profile?.tokens ?? 0,
+          tokens: firestoreTokens + experimentalTokens,
           emailVerified: firebaseUser.emailVerified,
         });
       }, []);
@@ -1973,19 +1994,41 @@
 
       const handleRedeemVoucher = async (e) => {
         e.preventDefault();
-        if (!paymentPack) return;
+        if (!paymentPack || !currentUser) return;
 
         const provider = paymentMethod === "ott" ? "ott" : "onevoucher";
-        const pin = voucherPin.replace(/\s+/g, "").trim();
-
-        if (!pin) {
-          setPaymentError("Enter your voucher PIN.");
-          return;
-        }
 
         setPurchasingPackId(paymentPack.id);
         setPaymentError("");
         try {
+          if (EXPERIMENTAL_VOUCHERS) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+
+            addExperimentalTokens(currentUser.uid, paymentPack.tokens);
+            const profile = firebaseDb ? await loadUserProfile(currentUser.uid) : null;
+            const firestoreTokens = profile?.tokens ?? 0;
+            const newBalance = firestoreTokens + loadExperimentalTokens(currentUser.uid);
+            const credited = paymentPack.tokens;
+
+            setCurrentUser((prev) => (prev ? { ...prev, tokens: newBalance } : prev));
+            closePaymentModal();
+            setEntryCelebration({
+              packName: `${paymentPack.name} Coin Pack`,
+              tokens: credited,
+              newBalance,
+              provider,
+              amount: paymentPack.value.replace("R", ""),
+              experimental: true,
+            });
+            return;
+          }
+
+          const pin = voucherPin.replace(/\s+/g, "").trim();
+          if (!pin) {
+            setPaymentError("Enter your voucher PIN.");
+            return;
+          }
+
           const redeemVoucherFn = firebaseFunctions.httpsCallable("redeemVoucher");
           const result = await redeemVoucherFn({
             provider,
@@ -2680,7 +2723,11 @@
                     </div>
                   </div>
 
-                  {entryCelebration.email && (
+                  {entryCelebration.experimental ? (
+                    <p className="text-xs text-amber-300/90 mb-6 font-bold uppercase tracking-widest">
+                      Experimental test mode — any voucher PIN accepted
+                    </p>
+                  ) : entryCelebration.email && (
                     <p className="text-xs text-gray-400 mb-6">
                       {entryCelebration.emailSent
                         ? <>A coin confirmation email was sent to <span className="text-emerald-300 font-bold">{entryCelebration.email}</span>.</>
@@ -2770,9 +2817,11 @@
                   ) : (
                     <form onSubmit={handleRedeemVoucher} className="space-y-4">
                       <p className="text-xs text-gray-400 leading-relaxed">
-                        {paymentMethod === "ott"
-                          ? "Enter the 12-digit PIN from your OTT voucher. Tokens are credited instantly after validation."
-                          : "Enter the 14–16 digit PIN from your 1Voucher. Tokens are credited instantly after validation."}
+                        {EXPERIMENTAL_VOUCHERS
+                          ? "Experimental mode: enter any voucher PIN (even a test/fake one). Tokens for this pack are credited instantly to your balance."
+                          : paymentMethod === "ott"
+                            ? "Enter the 12-digit PIN from your OTT voucher. Tokens are credited instantly after validation."
+                            : "Enter the 14–16 digit PIN from your 1Voucher. Tokens are credited instantly after validation."}
                       </p>
 
                       <div>
@@ -2785,7 +2834,7 @@
                           autoComplete="off"
                           value={voucherPin}
                           onChange={(e) => setVoucherPin(e.target.value.replace(/[^\d\s]/g, ""))}
-                          placeholder={paymentMethod === "ott" ? "1234 5678 9012" : "9876 5432 1098 76"}
+                          placeholder={EXPERIMENTAL_VOUCHERS ? "Any test PIN works" : paymentMethod === "ott" ? "1234 5678 9012" : "9876 5432 1098 76"}
                           maxLength={paymentMethod === "ott" ? 14 : 19}
                           className="w-full bg-[#050c18] border border-white/15 rounded-lg py-3 px-4 text-sm text-white gold-glow-border tracking-widest font-mono"
                         />
@@ -2812,15 +2861,19 @@
                         className="w-full py-3.5 rounded-lg btn-gold font-bold text-sm tracking-widest cursor-pointer border-none disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         {purchasingPackId === paymentPack.id
-                          ? "Redeeming..."
-                          : `Redeem ${paymentMethod === "ott" ? "OTT" : "1Voucher"} · ${paymentPack.value}`}
+                          ? "Crediting..."
+                          : EXPERIMENTAL_VOUCHERS
+                            ? `Credit ${paymentPack.tokens} tokens · ${paymentPack.value}`
+                            : `Redeem ${paymentMethod === "ott" ? "OTT" : "1Voucher"} · ${paymentPack.value}`}
                       </button>
                     </form>
                   )}
                 </div>
 
                 <div className="p-4 bg-[#041326] text-[10px] text-gray-400 border-t border-white/5 text-center px-6">
-                  Voucher PINs are single-use. PayFast · OTT · 1Voucher accepted in ZAR.
+                  {EXPERIMENTAL_VOUCHERS
+                    ? "Experimental mode · OTT & 1Voucher accept any PIN · tokens credited for testing"
+                    : "Voucher PINs are single-use. PayFast · OTT · 1Voucher accepted in ZAR."}
                 </div>
               </div>
             </div>
@@ -3104,7 +3157,9 @@
                 <p className="text-xs text-gray-400 mt-2">Choose validation coins to verify your prediction entries on kickoff.</p>
                 {paymentsReady ? (
                   <p className="text-[10px] text-emerald-300/90 mt-3 font-bold uppercase tracking-widest">
-                    PayFast · OTT Voucher · 1Voucher · ZAR
+                    {EXPERIMENTAL_VOUCHERS
+                      ? "Experimental · OTT & 1Voucher accept any PIN · instant test credits"
+                      : "PayFast · OTT Voucher · 1Voucher · ZAR"}
                   </p>
                 ) : (
                   <p className="text-[10px] text-amber-300/80 mt-3 font-bold uppercase tracking-widest">
