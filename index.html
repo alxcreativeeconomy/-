@@ -615,6 +615,35 @@
       pointer-events: none;
     }
 
+    .prize-stage-callout {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(244, 197, 66, 0.45);
+      background: linear-gradient(135deg, rgba(244, 197, 66, 0.14) 0%, rgba(3, 10, 26, 0.95) 45%, rgba(4, 26, 15, 0.9) 100%);
+      box-shadow: 0 0 40px rgba(244, 197, 66, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      animation: prizeCalloutPulse 3.5s ease-in-out infinite;
+    }
+
+    .prize-stage-callout::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(244, 197, 66, 0.08) 50%, transparent 100%);
+      transform: translateX(-100%);
+      animation: prizeCalloutShine 4s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes prizeCalloutPulse {
+      0%, 100% { box-shadow: 0 0 40px rgba(244, 197, 66, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.06); }
+      50% { box-shadow: 0 0 55px rgba(244, 197, 66, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+    }
+
+    @keyframes prizeCalloutShine {
+      0%, 100% { transform: translateX(-100%); }
+      50% { transform: translateX(100%); }
+    }
+
     /* ─── Holographic player reveal ─────────────────────────── */
     .fut-card-wrapper--selected {
       animation: cardHoloPulse 2.4s ease-in-out infinite;
@@ -3419,10 +3448,22 @@
             <SectionBlendBg src={BLEND_BACKGROUNDS.crowd} position="right" />
             <div className="max-w-7xl mx-auto px-6 relative z-10">
               
-              <div className="text-center max-w-2xl mx-auto mb-16">
+              <div className="text-center max-w-2xl mx-auto mb-10">
                 <span className="text-xs font-bold text-amber-400 tracking-widest uppercase">OFFICIAL REWARDS</span>
                 <h2 className="font-bebas text-5xl font-black text-white mt-1">SWEEPSTAKES PRIZE POOLS</h2>
                 <p className="text-xs text-gray-400 mt-2">Every verified prediction card qualifies for direct entries to win official grand sponsor prizes.</p>
+              </div>
+
+              <div className="prize-stage-callout max-w-4xl mx-auto mb-12 rounded-2xl px-6 py-5 sm:px-8 sm:py-6 text-center">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-400 mb-2 relative z-10">
+                  Group stage sweepstakes
+                </p>
+                <p className="font-bebas text-2xl sm:text-3xl text-white uppercase tracking-wide leading-tight relative z-10">
+                  Winners are announced after <span className="text-neon-gold">every group stage</span> has concluded
+                </p>
+                <p className="text-sm sm:text-base text-amber-100/90 mt-3 font-bold uppercase tracking-widest relative z-10">
+                  Get ready and participate
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
