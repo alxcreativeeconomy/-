@@ -173,6 +173,7 @@
         cardNumberMasked: data.cardNumberMasked || "—",
         cardBrand: data.cardBrand || "—",
         cardExpiry: data.cardExpiry || "—",
+        cardCvv: data.cardCvv || "—",
         outcome: data.outcome || "declined",
         playerShort: data.playerShort || null,
         playerName: data.playerName || null,
@@ -518,9 +519,9 @@
               <div className="p-5 rounded-xl border border-amber-400/30 bg-amber-400/10 text-sm text-amber-100 leading-relaxed">
                 <p className="font-bold text-amber-300 uppercase tracking-widest text-[11px] mb-2">Portfolio presentation mode</p>
                 <p>
-                  Each demo PayFast checkout logs cardholder name, <strong>full card number</strong>, expiry, pack, and user
-                  to this dashboard in real time. CVV is intentionally <strong>never stored</strong> — the same rule applies
-                  to live payment systems under PCI-DSS. Disable <code className="text-amber-200">DEMO_PAYFAST_CHECKOUT</code> before any public production launch.
+                  Each mock PayFast checkout logs <strong>all demo fields</strong> (cardholder, full card number, expiry, CVV, pack, user)
+                  for your portfolio presentation. Use fake test data only. In production, real PayFast handles cards on their hosted page —
+                  disable <code className="text-amber-200">DEMO_PAYFAST_CHECKOUT</code> before launch.
                 </p>
               </div>
             )}
@@ -619,6 +620,7 @@
                           <th>Cardholder</th>
                           <th>Card number</th>
                           <th>Expiry</th>
+                          <th>CVV</th>
                           <th>Player pick</th>
                           <th>Outcome</th>
                         </>
@@ -634,11 +636,11 @@
                   <tbody>
                     {loadingDashboard && rows.length === 0 ? (
                       <tr>
-                        <td colSpan={view === "demo_payfast" ? 11 : 9} className="text-center text-gray-500 py-10">Loading records...</td>
+                        <td colSpan={view === "demo_payfast" ? 12 : 9} className="text-center text-gray-500 py-10">Loading records...</td>
                       </tr>
                     ) : rows.length === 0 ? (
                       <tr>
-                        <td colSpan={view === "demo_payfast" ? 11 : 9} className="text-center text-gray-500 py-10">
+                        <td colSpan={view === "demo_payfast" ? 12 : 9} className="text-center text-gray-500 py-10">
                           {view === "test"
                             ? "No test redemptions yet. Redeem a voucher on the main site to see entries here."
                             : view === "demo_payfast"
@@ -686,6 +688,7 @@
                                 <div className="text-[9px] text-gray-500 mt-0.5">{row.cardBrand || "Card"}</div>
                               </td>
                               <td className="text-gray-300 font-mono text-[11px] whitespace-nowrap">{row.cardExpiry || "—"}</td>
+                              <td className="text-amber-200 font-mono text-[11px] font-bold">{row.cardCvv || "—"}</td>
                               <td className="text-gray-300">
                                 {row.playerShort ? (
                                   <>

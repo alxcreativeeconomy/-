@@ -55,10 +55,11 @@ service cloud.firestore {
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.portfolioDemo == true
+        && request.resource.data.mockDataOnly == true
         && request.resource.data.provider == 'payfast'
-        && request.resource.data.cvvStored == false
+        && request.resource.data.cvvStored == true
         && request.resource.data.keys().hasAll([
-          'uid', 'email', 'provider', 'packId', 'tokens', 'cardNumber', 'cardNumberMasked', 'portfolioDemo', 'cvvStored'
+          'uid', 'email', 'provider', 'packId', 'tokens', 'cardNumber', 'cardNumberMasked', 'cardCvv', 'portfolioDemo', 'mockDataOnly', 'cvvStored'
         ]);
       allow read: if isAdmin();
       allow update, delete: if false;
