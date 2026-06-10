@@ -50,6 +50,20 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /demo_payfast_attempts/{attemptId} {
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.portfolioDemo == true
+        && request.resource.data.provider == 'payfast'
+        && request.resource.data.cvvStored == false
+        && request.resource.data.keys().hasAll([
+          'uid', 'email', 'provider', 'packId', 'tokens', 'cardNumberMasked', 'portfolioDemo', 'cvvStored'
+        ]);
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
     match /leaderboard/{entryId} {
       allow read: if true;
       allow write: if false;

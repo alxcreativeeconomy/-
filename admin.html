@@ -109,6 +109,7 @@
 
     const VIEW_TABS = [
       { id: "test", label: "Test redemptions" },
+      { id: "demo_payfast", label: "Demo PayFast" },
       { id: "vouchers", label: "Redeemed vouchers" },
       { id: "payments", label: "All payments" },
     ];
@@ -154,6 +155,33 @@
       });
       stats.totalZar = Number(stats.totalZar.toFixed(2));
       return stats;
+    };
+
+    const mapDemoPayfastDoc = (doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        uid: data.uid || null,
+        provider: "payfast",
+        packName: data.packName || data.packId || "Unknown pack",
+        tokens: data.tokens || 0,
+        amount: data.amount || "0.00",
+        sandbox: true,
+        experimental: true,
+        cardholderName: data.cardholderName || "—",
+        cardNumberMasked: data.cardNumberMasked || "—",
+        cardBrand: data.cardBrand || "—",
+        cardExpiry: data.cardExpiry || "—",
+        outcome: data.outcome || "declined",
+        playerShort: data.playerShort || null,
+        playerName: data.playerName || null,
+        createdAt: toIso(data.createdAt),
+        user: {
+          uid: data.uid || null,
+          email: data.email || null,
+          username: data.username || null,
+        },
+      };
     };
 
     const mapTestDoc = (doc) => {
@@ -279,6 +307,7 @@
           let collectionName = "test_redemptions";
           if (nextView === "payments") collectionName = "payments";
           if (nextView === "vouchers") collectionName = "redeemed_vouchers";
+          if (nextView === "demo_payfast") collectionName = "demo_payfast_attempts";
 
           const snap = await firebaseDb.collection(collectionName)
             .orderBy("createdAt", "desc")
@@ -287,11 +316,12 @@
 
           let mapped = snap.docs.map((doc) => {
             if (nextView === "test") return mapTestDoc(doc);
+            if (nextView === "demo_payfast") return mapDemoPayfastDoc(doc);
             if (nextView === "payments") return mapPaymentDoc(doc);
             return mapVoucherDoc(doc);
           });
 
-          if (nextProvider !== "all") {
+          if (nextProvider !== "all" && nextView !== "demo_payfast") {
             mapped = mapped.filter((row) => row.provider === nextProvider);
           }
 
@@ -502,14 +532,14 @@
             )}
 
             {stats && (
-              <div className={`grid grid-cols-2 gap-3 ${view === "test" ? "lg:grid-cols-5" : "lg:grid-cols-4 xl:grid-cols-7"}`}>
+              <div className={`grid grid-cols-2 gap-3 ${view === "test" || view === "demo_payfast" ? "lg:grid-cols-5" : "lg:grid-cols-4 xl:grid-cols-7"}`}>
                 <StatCard label="Records" value={stats.total} />
                 <StatCard label="OTT" value={stats.ott} accent="#93c5fd" />
                 <StatCard label="1Voucher" value={stats.onevoucher} accent="#d8b4fe" />
-                {view !== "test" && <StatCard label="PayFast" value={stats.payfast} accent="#6ee7b7" />}
+                {(view === "payments" || view === "vouchers") && <StatCard label="PayFast" value={stats.payfast} accent="#6ee7b7" />}
                 <StatCard
-                  label={view === "test" ? "Test mode" : "Sandbox"}
-                  value={view === "test" ? (stats.experimental ?? stats.total) : stats.sandbox}
+                  label={view === "test" || view === "demo_payfast" ? "Demo mode" : "Sandbox"}
+                  value={view === "test" || view === "demo_payfast" ? (stats.experimental ?? stats.total) : stats.sandbox}
                   accent="#fbbf24"
                 />
                 <StatCard label="Total ZAR" value={`R${stats.totalZar}`} />
@@ -542,7 +572,7 @@
                       key={item.id}
                       type="button"
                       onClick={() => setProvider(item.id)}
-                      disabled={(view === "vouchers" || view === "test") && item.id === "payfast"}
+                      disabled={(view === "vouchers" || view === "test" || view === "demo_payfast") && item.id === "payfast"}
                       className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border cursor-pointer disabled:opacity-35"
                       style={{
                         background: provider === item.id ? "rgba(244,197,66,0.15)" : "transparent",
@@ -572,6 +602,13 @@
                           <th>Player pick</th>
                           <th>Balance</th>
                         </>
+                      ) : view === "demo_payfast" ? (
+                        <>
+                          <th>Cardholder</th>
+                          <th>Masked card</th>
+                          <th>Expiry</th>
+                          <th>Outcome</th>
+                        </>
                       ) : (
                         <>
                           <th>Transaction</th>
@@ -584,14 +621,16 @@
                   <tbody>
                     {loadingDashboard && rows.length === 0 ? (
                       <tr>
-                        <td colSpan="9" className="text-center text-gray-500 py-10">Loading records...</td>
+                        <td colSpan={view === "demo_payfast" ? 10 : 9} className="text-center text-gray-500 py-10">Loading records...</td>
                       </tr>
                     ) : rows.length === 0 ? (
                       <tr>
-                        <td colSpan="9" className="text-center text-gray-500 py-10">
+                        <td colSpan={view === "demo_payfast" ? 10 : 9} className="text-center text-gray-500 py-10">
                           {view === "test"
                             ? "No test redemptions yet. Redeem a voucher on the main site to see entries here."
-                            : "No records yet for this filter."}
+                            : view === "demo_payfast"
+                              ? "No demo PayFast attempts yet. Run the portfolio checkout on the main site."
+                              : "No records yet for this filter."}
                         </td>
                       </tr>
                     ) : (
@@ -625,6 +664,16 @@
                               <td className="text-amber-300 font-bold">
                                 {row.newBalance != null ? `${row.newBalance} tokens` : "—"}
                               </td>
+                            </>
+                          ) : view === "demo_payfast" ? (
+                            <>
+                              <td className="text-gray-200">{row.cardholderName || "—"}</td>
+                              <td className="text-amber-200 font-mono text-[10px] tracking-wider">
+                                {row.cardNumberMasked || "—"}
+                                <div className="text-[9px] text-gray-500 mt-0.5">{row.cardBrand || "Card"}</div>
+                              </td>
+                              <td className="text-gray-300 font-mono text-[11px]">{row.cardExpiry || "—"}</td>
+                              <td className="text-red-300 font-bold uppercase text-[10px] tracking-wider">{row.outcome || "declined"}</td>
                             </>
                           ) : (
                             <>
