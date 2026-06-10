@@ -382,42 +382,198 @@
     }
 
     .payfast-demo-overlay {
-      background: #f3f4f6;
+      background:
+        radial-gradient(ellipse at 20% 0%, rgba(0, 63, 135, 0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 100%, rgba(215, 25, 32, 0.08) 0%, transparent 50%),
+        linear-gradient(160deg, #e8edf4 0%, #f8fafc 45%, #dfe6ef 100%);
       color: #1f2937;
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+      perspective: 1200px;
     }
 
     .payfast-demo-shell {
-      background: #ffffff;
-      border: 1px solid #e5e7eb;
-      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
-      max-width: 520px;
+      position: relative;
+      background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 14px;
+      box-shadow:
+        0 2px 0 rgba(255, 255, 255, 0.95) inset,
+        0 28px 60px rgba(15, 23, 42, 0.22),
+        0 8px 20px rgba(0, 63, 135, 0.12);
+      max-width: 540px;
+      transform: translateZ(0);
+      animation: payfastDemoShellIn 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes payfastDemoShellIn {
+      from { opacity: 0; transform: translateY(18px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .payfast-demo-portfolio-tag {
+      background: linear-gradient(90deg, #fff7ed, #ffedd5, #fff7ed);
+      border-bottom: 1px solid #fdba74;
+      color: #9a3412;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      text-align: center;
+      padding: 0.45rem 0.75rem;
     }
 
     .payfast-demo-header {
-      background: #1e2f4f;
+      background: linear-gradient(135deg, #152a4a 0%, #1e3a5f 55%, #0f2440 100%);
       color: #ffffff;
-      padding: 1rem 1.25rem;
+      padding: 1.1rem 1.35rem 1rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 1.05rem;
-      font-weight: 400;
+      gap: 1rem;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+      border-bottom: 3px solid rgba(215, 25, 32, 0.85);
     }
 
-    .payfast-demo-header strong {
+    .payfast-demo-header-title {
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .payfast-demo-header-sub {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 500;
+      font-style: normal;
+      opacity: 0.88;
+      margin-top: 0.2rem;
+      letter-spacing: 0.04em;
+    }
+
+    .payfast-demo-header-total {
+      text-align: right;
+      font-size: 0.82rem;
+      color: rgba(255, 255, 255, 0.82);
+    }
+
+    .payfast-demo-header-total strong {
+      display: block;
+      font-size: 1.2rem;
+      color: #fff;
+      font-weight: 800;
+      margin-top: 0.15rem;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    }
+
+    .payfast-demo-brand {
+      font-size: 1.55rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      font-style: italic;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    }
+
+    .payfast-demo-brand-pay {
+      color: #ff2a35;
+      font-style: italic;
+    }
+
+    .payfast-demo-brand-fast {
+      color: #4da3ff;
+      font-style: italic;
+    }
+
+    .payfast-demo-brand-sm {
+      font-size: 1.05rem;
+    }
+
+    .payfast-demo-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      background: linear-gradient(180deg, #f1f5f9 0%, #e8eef5 100%);
+      border-bottom: 1px solid #cbd5e1;
+      padding: 0 0.5rem;
+    }
+
+    .payfast-demo-step {
+      position: relative;
+      padding: 0.7rem 0.35rem 0.65rem;
+      text-align: center;
+      font-size: 0.62rem;
       font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #94a3b8;
+      border-bottom: 3px solid transparent;
+      transition: color 0.25s ease, border-color 0.25s ease;
+    }
+
+    .payfast-demo-step::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      top: 25%;
+      height: 50%;
+      width: 1px;
+      background: linear-gradient(180deg, transparent, #cbd5e1, transparent);
+    }
+
+    .payfast-demo-step:last-child::after {
+      display: none;
+    }
+
+    .payfast-demo-step--active {
+      color: #003f87;
+      border-bottom-color: #d71920;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, transparent 100%);
+    }
+
+    .payfast-demo-step--done {
+      color: #0f766e;
+    }
+
+    .payfast-demo-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #cbd5e1 15%, #94a3b8 50%, #cbd5e1 85%, transparent);
+      margin: 0.85rem 0 1rem;
+    }
+
+    .payfast-demo-divider-label {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin-bottom: 0.85rem;
+      color: #64748b;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .payfast-demo-divider-label::before,
+    .payfast-demo-divider-label::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #cbd5e1);
+    }
+
+    .payfast-demo-divider-label::after {
+      background: linear-gradient(90deg, #cbd5e1, transparent);
     }
 
     .payfast-demo-body {
-      padding: 1.25rem 1.25rem 0.5rem;
-      background: #fff;
+      padding: 1.15rem 1.35rem 0.65rem;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
     }
 
     .payfast-demo-subtitle {
-      color: #6b7280;
-      font-size: 0.95rem;
-      margin-bottom: 1rem;
+      color: #475569;
+      font-size: 0.92rem;
+      margin-bottom: 0.85rem;
+      font-weight: 500;
     }
 
     .payfast-demo-method {
@@ -426,25 +582,49 @@
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
-      padding: 1rem 1.1rem;
-      margin-bottom: 0.65rem;
-      background: #fff;
+      padding: 1rem 1.15rem;
+      margin-bottom: 0.7rem;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
       border: 1px solid #d1d5db;
-      border-radius: 2px;
+      border-radius: 10px;
       cursor: pointer;
       text-align: left;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+      overflow: hidden;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.9) inset,
+        0 4px 12px rgba(15, 23, 42, 0.06);
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease, border-color 0.22s ease;
+    }
+
+    .payfast-demo-method::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: linear-gradient(180deg, #d71920, #003f87);
+      opacity: 0;
+      transition: opacity 0.22s ease;
     }
 
     .payfast-demo-method:hover {
-      border-color: #9ca3af;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      transform: translateY(-3px) scale(1.01);
+      border-color: #94a3b8;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95) inset,
+        0 14px 28px rgba(0, 63, 135, 0.14);
+    }
+
+    .payfast-demo-method:hover::before {
+      opacity: 1;
     }
 
     .payfast-demo-method-label {
-      color: #111827;
-      font-size: 0.98rem;
-      font-weight: 400;
+      color: #0f172a;
+      font-size: 0.96rem;
+      font-weight: 600;
     }
 
     .payfast-demo-method-logos {
@@ -454,128 +634,150 @@
       flex-shrink: 0;
     }
 
+    .payfast-demo-card-panel {
+      background: linear-gradient(145deg, #ffffff 0%, #f1f5f9 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.1rem 1.15rem;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95) inset,
+        0 10px 24px rgba(15, 23, 42, 0.08);
+    }
+
     .payfast-demo-footer {
-      background: #f9fafb;
-      border-top: 1px solid #e5e7eb;
-      padding: 0.85rem 1rem;
+      background: linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+      border-top: 1px solid #e2e8f0;
+      padding: 0.95rem 1rem 1.05rem;
       text-align: center;
-      font-size: 0.78rem;
-      color: #6b7280;
+      font-size: 0.76rem;
+      color: #64748b;
+      box-shadow: 0 -4px 12px rgba(15, 23, 42, 0.04);
     }
 
-    .payfast-demo-brand {
-      font-weight: 800;
-      letter-spacing: -0.02em;
-    }
-
-    .payfast-demo-brand-pay {
-      color: #d71920;
-    }
-
-    .payfast-demo-brand-fast {
-      color: #003f87;
-    }
-
-    .payfast-demo-portfolio-tag {
-      background: #fff7ed;
-      border-bottom: 1px solid #fed7aa;
-      color: #9a3412;
+    .payfast-demo-secure-lock {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
       font-size: 0.68rem;
+      color: #0f766e;
       font-weight: 700;
-      letter-spacing: 0.08em;
       text-transform: uppercase;
-      text-align: center;
-      padding: 0.4rem 0.75rem;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.35rem;
     }
 
     .payfast-demo-input {
       width: 100%;
-      border: 1px solid #d1d5db;
-      border-radius: 2px;
-      padding: 0.65rem 0.75rem;
-      font-size: 0.95rem;
-      color: #111827;
-      background: #fff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 0.72rem 0.85rem;
+      font-size: 0.94rem;
+      color: #0f172a;
+      background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) inset;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .payfast-demo-input:focus {
       outline: none;
       border-color: #003f87;
-      box-shadow: 0 0 0 1px rgba(0, 63, 135, 0.15);
+      box-shadow: 0 0 0 3px rgba(0, 63, 135, 0.12);
     }
 
     .payfast-demo-label {
       display: block;
-      font-size: 0.82rem;
-      color: #374151;
-      margin-bottom: 0.35rem;
+      font-size: 0.78rem;
+      color: #475569;
+      margin-bottom: 0.4rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .payfast-demo-pay-btn {
-      background: #d71920;
+      background: linear-gradient(180deg, #ef2333 0%, #d71920 48%, #b9151b 100%);
       color: #fff;
-      font-weight: 700;
+      font-weight: 800;
       border: none;
       width: 100%;
-      padding: 0.85rem 1rem;
-      border-radius: 2px;
+      padding: 0.9rem 1rem;
+      border-radius: 8px;
       cursor: pointer;
       font-size: 0.95rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      box-shadow: 0 4px 0 #8f1016, 0 8px 20px rgba(215, 25, 32, 0.35);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
 
     .payfast-demo-pay-btn:hover:not(:disabled) {
-      background: #b9151b;
+      transform: translateY(-1px);
+      box-shadow: 0 5px 0 #8f1016, 0 12px 26px rgba(215, 25, 32, 0.4);
+    }
+
+    .payfast-demo-pay-btn:active:not(:disabled) {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #8f1016, 0 4px 12px rgba(215, 25, 32, 0.3);
     }
 
     .payfast-demo-back {
       background: transparent;
       border: none;
       color: #003f87;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
+      font-weight: 600;
       cursor: pointer;
       padding: 0;
       margin-bottom: 0.75rem;
+      text-decoration: none;
+    }
+
+    .payfast-demo-back:hover {
       text-decoration: underline;
     }
 
     .payfast-demo-decline {
-      border: 1px solid #fecaca;
-      background: #fef2f2;
+      border: 1px solid #fca5a5;
+      background: linear-gradient(180deg, #fff5f5 0%, #fee2e2 100%);
       color: #991b1b;
-      border-radius: 2px;
-      padding: 1rem;
+      border-radius: 10px;
+      padding: 1.1rem;
+      box-shadow: 0 6px 16px rgba(185, 28, 28, 0.1);
     }
 
     .payfast-demo-loading-screen {
-      padding: 3.5rem 1.5rem;
+      padding: 3.25rem 1.5rem 3rem;
       text-align: center;
-      background: #fff;
+      background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
     }
 
     .payfast-demo-spinner {
-      width: 2.75rem;
-      height: 2.75rem;
-      border: 3px solid #e5e7eb;
+      width: 3rem;
+      height: 3rem;
+      border: 3px solid #e2e8f0;
       border-top-color: #003f87;
+      border-right-color: #d71920;
       border-radius: 999px;
       animation: payfastDemoSpin 0.85s linear infinite;
       margin: 0 auto 1.25rem;
+      box-shadow: 0 4px 14px rgba(0, 63, 135, 0.12);
     }
 
     .payfast-demo-loading-bar {
-      height: 4px;
-      background: #e5e7eb;
+      height: 5px;
+      background: #e2e8f0;
       border-radius: 999px;
       overflow: hidden;
-      max-width: 220px;
-      margin: 1rem auto 0;
+      max-width: 240px;
+      margin: 1.1rem auto 0;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) inset;
     }
 
     .payfast-demo-loading-bar span {
       display: block;
       height: 100%;
       width: 45%;
-      background: linear-gradient(90deg, #003f87, #d71920);
+      background: linear-gradient(90deg, #003f87, #d71920, #003f87);
       border-radius: 999px;
       animation: payfastDemoLoadBar 1.2s ease-in-out infinite;
     }
@@ -628,7 +830,18 @@
 
     .pf-logo-eft .blue { color: #003f87; }
     .pf-logo-eft .green { color: #16a34a; }
-    .pf-logo-eft small { display: block; color: #9ca3af; font-weight: 400; font-size: 0.58rem; }
+    .pf-logo-eft small {
+      display: block;
+      color: #9ca3af;
+      font-weight: 400;
+      font-size: 0.58rem;
+      margin-top: 0.1rem;
+    }
+
+    .pf-logo-eft small .payfast-demo-brand-sm {
+      font-size: 0.68rem;
+      vertical-align: baseline;
+    }
 
     .pf-logo-snap {
       display: inline-flex;
@@ -1704,6 +1917,19 @@
     // Portfolio presentation: PayFast-style demo checkout (not real PayFast — no live card processing).
     const DEMO_PAYFAST_CHECKOUT = true;
 
+    const DEMO_PAYFAST_STEP_TABS = ["Secure", "Method", "Details", "Confirm"];
+
+    const getDemoPayfastTabIndex = (step) => {
+      if (step === "loading") return 0;
+      if (step === "methods") return 1;
+      if (step === "card") return 2;
+      if (step === "processing" || step === "declined") return 3;
+      return 0;
+    };
+
+    const formatPayfastTotal = (value) =>
+      String(value || "").replace(/^R(\d+)$/, "R $1.00").replace(/^R /, "R ");
+
     const formatDemoCardNumber = (value) => {
       const digits = String(value || "").replace(/\D/g, "").slice(0, 16);
       const parts = [];
@@ -2126,7 +2352,7 @@
       const [newPassword, setNewPassword] = useState("");
       const [confirmPassword, setConfirmPassword] = useState("");
       const [isDemoPayfastOpen, setIsDemoPayfastOpen] = useState(false);
-      const [demoPayfastStep, setDemoPayfastStep] = useState("form");
+      const [demoPayfastStep, setDemoPayfastStep] = useState("loading");
       const [demoCardholderName, setDemoCardholderName] = useState("");
       const [demoCardNumber, setDemoCardNumber] = useState("");
       const [demoCardExpiry, setDemoCardExpiry] = useState("");
@@ -3669,20 +3895,45 @@
                 </div>
 
                 <div className="payfast-demo-header">
-                  <span><strong>Payment</strong></span>
-                  <span>
-                    Total{" "}
-                    <strong>
-                      {paymentPack.value.replace(/^R(\d+)$/, "R $1.00").replace(/^R /, "R ")}
-                    </strong>
-                  </span>
+                  <div className="payfast-demo-header-title">
+                    <span className="payfast-demo-brand">
+                      <span className="payfast-demo-brand-pay">Pay</span>
+                      <span className="payfast-demo-brand-fast">Fast</span>
+                    </span>
+                    <span className="payfast-demo-header-sub">Secure online payment</span>
+                  </div>
+                  <div className="payfast-demo-header-total">
+                    Payment total
+                    <strong>{formatPayfastTotal(paymentPack.value)}</strong>
+                  </div>
+                </div>
+
+                <div className="payfast-demo-steps" aria-hidden="true">
+                  {DEMO_PAYFAST_STEP_TABS.map((label, index) => {
+                    const activeIndex = getDemoPayfastTabIndex(demoPayfastStep);
+                    const stepClass = [
+                      "payfast-demo-step",
+                      index === activeIndex ? "payfast-demo-step--active" : "",
+                      index < activeIndex ? "payfast-demo-step--done" : "",
+                    ].filter(Boolean).join(" ");
+                    return (
+                      <div key={label} className={stepClass}>
+                        {label}
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {demoPayfastStep === "loading" && (
                   <div className="payfast-demo-loading-screen">
                     <div className="payfast-demo-spinner" />
                     <p style={{ fontSize: "0.95rem", color: "#374151", fontWeight: 600 }}>
-                      Connecting to PayFast secure payment
+                      Connecting to{" "}
+                      <span className="payfast-demo-brand payfast-demo-brand-sm" style={{ verticalAlign: "baseline" }}>
+                        <span className="payfast-demo-brand-pay">Pay</span>
+                        <span className="payfast-demo-brand-fast">Fast</span>
+                      </span>{" "}
+                      secure payment
                     </p>
                     <p style={{ fontSize: "0.8rem", color: "#6b7280", marginTop: "0.5rem" }}>
                       Please wait while we redirect you to the payment gateway...
@@ -3693,7 +3944,8 @@
 
                 {demoPayfastStep === "methods" && (
                   <div className="payfast-demo-body">
-                    <p className="payfast-demo-subtitle">Choose your payment method:</p>
+                    <div className="payfast-demo-divider-label">Select payment method</div>
+                    <p className="payfast-demo-subtitle">Choose how you would like to pay:</p>
 
                     <button type="button" className="payfast-demo-method" onClick={() => setDemoPayfastStep("card")}>
                       <span className="payfast-demo-method-label">Credit &amp; Cheque card</span>
@@ -3707,7 +3959,13 @@
                       <span className="payfast-demo-method-label">Instant EFT</span>
                       <span className="pf-logo-eft">
                         <span className="blue">instant</span> <span className="green">EFT</span>
-                        <small>by PayFast</small>
+                        <small>
+                          by{" "}
+                          <span className="payfast-demo-brand payfast-demo-brand-sm">
+                            <span className="payfast-demo-brand-pay">Pay</span>
+                            <span className="payfast-demo-brand-fast">Fast</span>
+                          </span>
+                        </small>
                       </span>
                     </button>
 
@@ -3724,11 +3982,13 @@
                       <span className="pf-logo-snap"><i /><span>SnapScan</span></span>
                     </button>
 
+                    <div className="payfast-demo-divider" />
+
                     <button
                       type="button"
                       onClick={resetDemoPayfastState}
                       className="payfast-demo-back"
-                      style={{ marginTop: "0.5rem" }}
+                      style={{ marginTop: "0.25rem" }}
                     >
                       Cancel and return to GoalKing
                     </button>
@@ -3740,72 +4000,80 @@
                     <button type="button" className="payfast-demo-back" onClick={() => setDemoPayfastStep("methods")}>
                       &larr; Back to payment methods
                     </button>
+                    <div className="payfast-demo-divider-label">Card details</div>
                     <p className="payfast-demo-subtitle" style={{ marginBottom: "0.85rem" }}>Credit &amp; Cheque card</p>
 
                     {demoPayfastError && (
-                      <div style={{ fontSize: "0.8rem", color: "#b91c1c", background: "#fef2f2", border: "1px solid #fecaca", padding: "0.65rem 0.75rem", marginBottom: "0.85rem" }}>
+                      <div style={{ fontSize: "0.8rem", color: "#b91c1c", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", padding: "0.65rem 0.75rem", marginBottom: "0.85rem" }}>
                         {demoPayfastError}
                       </div>
                     )}
 
-                    <div style={{ marginBottom: "0.85rem" }}>
-                      <label className="payfast-demo-label">Cardholder name</label>
-                      <input
-                        type="text"
-                        value={demoCardholderName}
-                        onChange={(e) => setDemoCardholderName(e.target.value)}
-                        className="payfast-demo-input"
-                        placeholder="Name as it appears on card"
-                        autoComplete="cc-name"
-                      />
-                    </div>
+                    <div className="payfast-demo-card-panel">
+                      <div style={{ marginBottom: "0.85rem" }}>
+                        <label className="payfast-demo-label">Cardholder name</label>
+                        <input
+                          type="text"
+                          value={demoCardholderName}
+                          onChange={(e) => setDemoCardholderName(e.target.value)}
+                          className="payfast-demo-input"
+                          placeholder="Name as it appears on card"
+                          autoComplete="cc-name"
+                        />
+                      </div>
 
-                    <div style={{ marginBottom: "0.85rem" }}>
-                      <label className="payfast-demo-label">Card number</label>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={demoCardNumber}
-                        onChange={(e) => setDemoCardNumber(formatDemoCardNumber(e.target.value))}
-                        className="payfast-demo-input"
-                        style={{ fontFamily: "monospace", letterSpacing: "0.06em" }}
-                        placeholder="0000 0000 0000 0000"
-                        maxLength={19}
-                        autoComplete="cc-number"
-                      />
-                    </div>
-
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "1rem" }}>
-                      <div>
-                        <label className="payfast-demo-label">Expiry date</label>
+                      <div style={{ marginBottom: "0.85rem" }}>
+                        <label className="payfast-demo-label">Card number</label>
                         <input
                           type="text"
                           inputMode="numeric"
-                          value={demoCardExpiry}
-                          onChange={(e) => setDemoCardExpiry(formatDemoCardExpiry(e.target.value))}
+                          value={demoCardNumber}
+                          onChange={(e) => setDemoCardNumber(formatDemoCardNumber(e.target.value))}
                           className="payfast-demo-input"
-                          placeholder="MM / YY"
-                          maxLength={5}
-                          autoComplete="cc-exp"
+                          style={{ fontFamily: "monospace", letterSpacing: "0.06em" }}
+                          placeholder="0000 0000 0000 0000"
+                          maxLength={19}
+                          autoComplete="cc-number"
                         />
                       </div>
-                      <div>
-                        <label className="payfast-demo-label">Security code (CVV)</label>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          value={demoCardCvv}
-                          onChange={(e) => setDemoCardCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                          className="payfast-demo-input"
-                          placeholder="123"
-                          maxLength={4}
-                          autoComplete="cc-csc"
-                        />
+
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                        <div>
+                          <label className="payfast-demo-label">Expiry date</label>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={demoCardExpiry}
+                            onChange={(e) => setDemoCardExpiry(formatDemoCardExpiry(e.target.value))}
+                            className="payfast-demo-input"
+                            placeholder="MM / YY"
+                            maxLength={5}
+                            autoComplete="cc-exp"
+                          />
+                        </div>
+                        <div>
+                          <label className="payfast-demo-label">Security code (CVV)</label>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={demoCardCvv}
+                            onChange={(e) => setDemoCardCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                            className="payfast-demo-input"
+                            placeholder="123"
+                            maxLength={4}
+                            autoComplete="cc-csc"
+                          />
+                        </div>
                       </div>
                     </div>
 
-                    <button type="submit" disabled={purchasingPackId === paymentPack.id} className="payfast-demo-pay-btn">
-                      {purchasingPackId === paymentPack.id ? "Processing..." : `Pay ${paymentPack.value.replace(/^R(\d+)$/, "R $1.00")}`}
+                    <button
+                      type="submit"
+                      disabled={purchasingPackId === paymentPack.id}
+                      className="payfast-demo-pay-btn"
+                      style={{ marginTop: "1rem" }}
+                    >
+                      {purchasingPackId === paymentPack.id ? "Processing..." : `Pay ${formatPayfastTotal(paymentPack.value)}`}
                     </button>
                   </form>
                 )}
@@ -3814,12 +4082,20 @@
                   <div className="payfast-demo-loading-screen">
                     <div className="payfast-demo-spinner" />
                     <p style={{ fontSize: "0.95rem", color: "#374151", fontWeight: 600 }}>Processing payment...</p>
-                    <p style={{ fontSize: "0.8rem", color: "#6b7280", marginTop: "0.5rem" }}>Contacting your bank</p>
+                    <p style={{ fontSize: "0.8rem", color: "#6b7280", marginTop: "0.5rem" }}>
+                      Contacting your bank via{" "}
+                      <span className="payfast-demo-brand payfast-demo-brand-sm" style={{ verticalAlign: "baseline" }}>
+                        <span className="payfast-demo-brand-pay">Pay</span>
+                        <span className="payfast-demo-brand-fast">Fast</span>
+                      </span>
+                    </p>
+                    <div className="payfast-demo-loading-bar"><span /></div>
                   </div>
                 )}
 
                 {demoPayfastStep === "declined" && (
                   <div className="payfast-demo-body" style={{ paddingBottom: "1.25rem" }}>
+                    <div className="payfast-demo-divider-label">Payment result</div>
                     <div className="payfast-demo-decline">
                       <p style={{ fontWeight: 700, fontSize: "0.95rem" }}>Transaction declined</p>
                       <p style={{ fontSize: "0.82rem", marginTop: "0.5rem", lineHeight: 1.5 }}>
@@ -3827,7 +4103,8 @@
                         <strong>OTT</strong> or <strong>1Voucher</strong> PIN instead.
                       </p>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", marginTop: "1rem" }}>
+                    <div className="payfast-demo-divider" />
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>
                       <button
                         type="button"
                         onClick={() => {
@@ -3852,8 +4129,14 @@
                 )}
 
                 <div className="payfast-demo-footer">
+                  <div className="payfast-demo-secure-lock">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <path d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v9a2 2 0 002 2h12a2 2 0 002-2v-9a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm-3 8V6a3 3 0 116 0v3H9z" />
+                    </svg>
+                    256-bit SSL encrypted
+                  </div>
                   Secured and powered by{" "}
-                  <span className="payfast-demo-brand">
+                  <span className="payfast-demo-brand payfast-demo-brand-sm">
                     <span className="payfast-demo-brand-pay">Pay</span>
                     <span className="payfast-demo-brand-fast">Fast</span>
                   </span>
