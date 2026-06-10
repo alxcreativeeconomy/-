@@ -1784,13 +1784,13 @@
         clubUrl: CLUB_LOGOS.bayern
       },
       { 
-        id: 11, name: "Lyle Foster", short: "FOSTER", pos: "ST", nat: "SOUTH AFRICA", rating: 72, pac: 81, sho: 72, pas: 61, dri: 69, def: 36, phy: 73, tier: "GOLD", cat: "striker",
+        id: 11, name: "Lyle Foster", short: "FOSTER", pos: "ST", nat: "SOUTH AFRICA", rating: 82, pac: 81, sho: 79, pas: 61, dri: 69, def: 36, phy: 73, tier: "GOLD", cat: "striker",
         imageUrl: "https://cdn.futbin.com/content/fifa26/img/players/241173.png",
         flagUrl: "https://flagcdn.com/w40/za.png",
         clubUrl: CLUB_LOGOS.burnley
       },
       { 
-        id: 12, name: "Relebohile Mofokeng", short: "MOFOKENG", pos: "LW", nat: "SOUTH AFRICA", rating: 65, pac: 67, sho: 58, pas: 59, dri: 73, def: 37, phy: 56, tier: "GOLD", cat: "winger",
+        id: 12, name: "Relebohile Mofokeng", short: "MOFOKENG", pos: "LW", nat: "SOUTH AFRICA", rating: 81, pac: 75, sho: 60, pas: 59, dri: 73, def: 37, phy: 56, tier: "GOLD", cat: "winger",
         imageUrl: assetPath("players/mofokeng.png"),
         flagUrl: "https://flagcdn.com/w40/za.png",
         clubUrl: CLUB_LOGOS.orlandoPirates
@@ -2026,12 +2026,13 @@
       } catch (_) {}
     };
 
-    const buildAppHistoryUrl = (state) => {
-      const params = new URLSearchParams(window.location.search);
+    const buildCleanUrl = (search = window.location.search) => {
+      const params = new URLSearchParams(search);
       const qs = params.toString();
-      const hash = state?.s ? `#${state.s}` : "";
-      return `${window.location.pathname}${qs ? `?${qs}` : ""}${hash}`;
+      return `${window.location.pathname}${qs ? `?${qs}` : ""}`;
     };
+
+    const buildAppHistoryUrl = () => buildCleanUrl();
 
     const FIREBASE_PLACEHOLDER = "YOUR_API_KEY";
     const firebaseReady = typeof firebase !== "undefined"
@@ -3224,8 +3225,7 @@
         params.delete("pack");
         params.delete("session_id");
         const remaining = params.toString();
-        const nextUrl = `${window.location.pathname}${remaining ? `?${remaining}` : ""}${window.location.hash}`;
-        window.history.replaceState({}, "", nextUrl);
+        window.history.replaceState({}, "", buildCleanUrl(remaining ? `?${remaining}` : ""));
       }, [setUserFromFirebase, showToast]);
 
       useEffect(() => {
@@ -3247,8 +3247,7 @@
 
         params.delete("auth");
         const remaining = params.toString();
-        const nextUrl = `${window.location.pathname}${remaining ? `?${remaining}` : ""}${window.location.hash}`;
-        window.history.replaceState({}, "", nextUrl);
+        window.history.replaceState({}, "", buildCleanUrl(remaining ? `?${remaining}` : ""));
       }, [showToast]);
 
       useEffect(() => {
@@ -3268,8 +3267,7 @@
           params.delete("continueUrl");
           params.delete("lang");
           const remaining = params.toString();
-          const nextUrl = `${window.location.pathname}${remaining ? `?${remaining}` : ""}${window.location.hash}`;
-          window.history.replaceState({}, "", nextUrl);
+          window.history.replaceState({}, "", buildCleanUrl(remaining ? `?${remaining}` : ""));
         };
 
         const handleAuthEmailAction = async () => {
@@ -4347,7 +4345,7 @@
                   </div>
 
                   <p className="text-[10px] text-gray-500 text-center mt-5 uppercase tracking-widest font-bold">
-                    PayFast · OTT 12-digit · 1Voucher 16-digit
+                    PayFast · OTT · 1Voucher ·
                   </p>
                 </div>
               </div>
@@ -4359,7 +4357,7 @@
             <div className="payfast-demo-overlay fixed inset-0 z-[1070] flex items-center justify-center p-4 overflow-y-auto">
               <div className="payfast-demo-shell w-full rounded-sm overflow-hidden my-4">
                 <div className="payfast-demo-portfolio-tag">
-                  Portfolio mock gateway · fake data only · logged to admin dashboard
+                  Payment Gateway ·
                 </div>
 
                 <div className="payfast-demo-header">
